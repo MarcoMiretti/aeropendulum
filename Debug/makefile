@@ -1,69 +1,40 @@
-################################################################################
-# Automatically-generated file. Do not edit!
-################################################################################
+###################################################
 
--include ../makefile.init
+PROJ_NAME=stm32aero
 
-RM := rm -rf
+CC=arm-none-eabi-gcc
+OBJCOPY=arm-none-eabi-objcopy
 
-# All of the sources participating in the build are defined here
--include sources.mk
--include src/subdir.mk
--include subdir.mk
--include objects.mk
+CFLAGS  = -g -O2 -Wall -Tstm32_flash.ld
+CFLAGS += -mlittle-endian -mthumb -mcpu=cortex-m4 -mthumb-interwork
+CFLAGS += -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
-ifneq ($(MAKECMDGOALS),clean)
-ifneq ($(strip $(ASM_DEPS)),)
--include $(ASM_DEPS)
-endif
-ifneq ($(strip $(S_UPPER_DEPS)),)
--include $(S_UPPER_DEPS)
-endif
-ifneq ($(strip $(C_DEPS)),)
--include $(C_DEPS)
-endif
-endif
+###################################################
 
--include ../makefile.defs
+vpath %.c src
 
-# Add inputs and outputs from these tool invocations to the build variables 
-SECONDARY_FLASH += \
-stm32aero.hex \
+ROOT=$(shell pwd)
 
-SECONDARY_SIZE += \
-stm32aero.siz \
+SRCS = ../src/main.c \
+../src/system_stm32f4xx.c \
+../startup_stm32f407xx.s
 
+OBJS = $(SRCS:.c=.o)
 
-# All Target
-all: stm32aero.elf secondary-outputs
+###################################################
 
-# Tool invocations
-stm32aero.elf: $(OBJS) $(USER_OBJS)
-	@echo 'Building target: $@'
-	@echo 'Invoking: GNU ARM Cross C Linker'
-	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16  -mlittle-endian --specs=nosys.specs -O0 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections  -g3 -Xlinker --gc-sections -Wl,-Map,"stm32aero.map" -o "stm32aero.elf" ./../startup_stm32f407xx.s $(OBJS) $(USER_OBJS) $(LIBS)
-	@echo 'Finished building target: $@'
-	@echo ' '
+.PHONY: lib proj
 
-stm32aero.hex: stm32aero.elf
-	@echo 'Invoking: GNU ARM Cross Create Flash Image'
-	arm-none-eabi-objcopy -O ihex "stm32aero.elf"  "stm32aero.hex"
-	@echo 'Finished building: $@'
-	@echo ' '
+all: lib proj
 
-stm32aero.siz: stm32aero.elf
-	@echo 'Invoking: GNU ARM Cross Print Size'
-	arm-none-eabi-size --format=berkeley "stm32aero.elf"
-	@echo 'Finished building: $@'
-	@echo ' '
+proj: 	$(PROJ_NAME).elf
 
-# Other Targets
+$(PROJ_NAME).elf: $(SRCS)
+	$(CC) $(CFLAGS) $^ -o $@ -I"../inc"
+	$(OBJCOPY) -O ihex $(PROJ_NAME).elf $(PROJ_NAME).hex
+	$(OBJCOPY) -O binary $(PROJ_NAME).elf $(PROJ_NAME).bin
+
 clean:
-	-$(RM) $(OBJS)$(SECONDARY_FLASH)$(SECONDARY_SIZE)$(ASM_DEPS)$(S_UPPER_DEPS)$(C_DEPS) stm32aero.elf
-	-@echo ' '
-
-secondary-outputs: $(SECONDARY_FLASH) $(SECONDARY_SIZE)
-
-.PHONY: all clean dependents
-
--include ../makefile.targets
+	rm -f $(PROJ_NAME).elf
+	rm -f $(PROJ_NAME).hex
+	rm -f $(PROJ_NAME).bin
