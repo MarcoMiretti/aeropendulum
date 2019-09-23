@@ -38,3 +38,6 @@ clean:
 	rm -f $(PROJ_NAME).elf
 	rm -f $(PROJ_NAME).hex
 	rm -f $(PROJ_NAME).bin
+	
+flash:
+	st-flash write $(PROJ_NAME).bin 0x8000000
