@@ -78,6 +78,53 @@ uint8_t TIM4_Init(void)
 }
 
 /**
+  * @brief  Init sequence for TIM3.
+  * @retval int
+  */
+uint8_t TIM3_Init(void)
+{
+	#define TIM3_EN  			(1 << 1) 
+	//#define TIM3_ARR 								((uint16_t)0x20CF)		/* Auto reload register = 84000000 / 10000 - 1 = 8399 set for 10kHz PWM*/
+	//#define TIM_PSCReloadMode_Immediate        		((uint16_t)0x0001)
+	
+	
+	/* Clock for TIM3*/
+	RCC->APB1ENR |= TIM3_EN;
+	
+	/* Set TIM3 */
+	uint16_t tmpcr1 = 0, tmpccmr1 = 0, tmpccmr2 = 0, tmpccer = 0, tmpsmcr = 0;
+	tmpcr1 = TIM3->CR1;
+	
+    tmpcr1 &= (uint16_t)(~(TIM_CR1_DIR | TIM_CR1_CMS));					/* Set the Counter Mode (edge up) */
+	
+	TIM3->CR1 = tmpcr1;
+
+
+	tmpccmr1 = TIM3->CCMR1;
+	tmpccmr1 |= TIM_CCMR1_CC1S_0;											/* TI1FP1 mapped on TI1 */
+	//TIM3->CCMR1 = tmpccmr1;
+	
+	//tmpccmr1 = TIM3->CCMR2;
+	tmpccmr1 |= TIM_CCMR1_CC2S_0;											/* TI2FP2 mapped on TI2 */
+	TIM3->CCMR1 = tmpccmr1;
+	
+	tmpccer = TIM3->CCER;
+	tmpccer &= (uint16_t)(~(TIM_CCER_CC1P | TIM_CCER_CC1NP));			/* TI1FP1 noninverted, TI1FP1=TI1 */
+	tmpccer &= (uint16_t)(~(TIM_CCER_CC2P | TIM_CCER_CC2NP));			/* TI2FP2 noninverted, TI2FP2=TI2 */
+
+	tmpsmcr = TIM3->SMCR;
+	tmpsmcr |= (uint16_t)(~(TIM_SMCR_SMS_0 | TIM_SMCR_SMS_1));
+	tmpsmcr &= (uint16_t)(~(TIM_SMCR_SMS_2));							/* both inputs are active on both rising and falling edges */
+
+	//TIM4->ARR  = TIM3_ARR; 											/* Sets timer period */
+	//TIM4->PSC = 0;
+	//TIM4->EGR = TIM_PSCReloadMode_Immediate;  						/* Reload PSC */
+	
+	TIM4->CR1 |= TIM_CR1_CEN;											/* Enable TIM4 */
+	return 0;
+}
+
+/**
   * @brief  Init sequence for PWM.
   * @retval int
   */
