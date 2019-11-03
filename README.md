@@ -8,22 +8,29 @@ Se espera que el proyecto siga la siguente estructura:
 +-- README.md
 +-- .gitignore
 |
-+-- Makefile
-+-- libs (not yet commited)
-|	+-- (not yet commited)
-+-- scripts (not yet commited)
-|	+-- (not yet commited)
-+-- aero
-|   +-- inc
-|       +-- main.h
-|	+-- FreeRTOSConfig.h
-|	+-- lpc4337_HAL.h
-|       +-- (tasks and/or files headers)
-|   +-- src
-|       +-- main.c (aquí la descripción del proyecto)
-|	+-- FreeRTOSConfig.c
-|	+-- lpc4337_HAL.c
-|       +-- (tasks and/or files headers)
++-- firmware
+|	+-- Makefile
+|	+-- libs (not yet commited)
+|	|	+-- (not yet commited)
+|	+-- scripts (not yet commited)
+|	|	+-- (not yet commited)
+|	+-- aero
+|	|	+-- inc
+|	|	|	+-- main.h
+|	|	|	+-- FreeRTOSConfig.h
+|	|	|	+-- lpc4337_HAL.h
+|	|       |	+-- (tasks and/or files headers)
+|	|	+-- src
+|	|       |	+-- main.c (aquí la descripción del proyecto)
+|	|	|	+-- FreeRTOSConfig.c
+|	|	|	+-- lpc4337_HAL.c
+|	|       |	+-- (tasks and/or files headers)
++-- mechanical
+|	+-- 3DPrints
+|	|	+-- freecad
+|	|	|	+-- *.fcstd
+|	|	+-- stl
+|	|	|	+-- *.stl
 ```
 ## Lineamientos de código
 
@@ -38,6 +45,7 @@ Si es posible, se busca utilizar:
 ## Compilación
 ### Linux:
 ```
+cd firmware
 make
 ```
 #### Prequisitos
@@ -49,6 +57,7 @@ make
 ### Linux
 
 ```
+cd firmware
 make download
 ```
 
