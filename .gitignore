@@ -1,3 +1,12 @@
+# Ignored files because of future changes
+# i dont really like the makefiles but also
+# dont have time to change 'em right now
+libs/
+scripts/
+Makefile
+newMakefileLogs
+program.mk
+
 # Prerequisites
 *.d
 
