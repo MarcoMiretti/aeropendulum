@@ -6,7 +6,6 @@
 
 #include "userTasks.h"
 #include "lpc4337_HAL.h"
-
 /**
  * \addtogroup LED Functions
  * @{
@@ -25,6 +24,9 @@ static int RGB_Off(void);
  */
 void fancyBlink( void* taskParmPtr )
 {
+	iPWM_Init();
+	iPWM_SetDuty(50.0);
+	
 	RGB_White();
 	vTaskDelay( 1000 / portTICK_RATE_MS );				/**< Task blocked for 1000ms */
 	RGB_Off();
@@ -33,19 +35,29 @@ void fancyBlink( void* taskParmPtr )
 	portTickType xLastWakeTime = xTaskGetTickCount();
 	unsigned volatile int i,j;
 
+	volatile float duty_value;
 	/** Repeat task */
 	while(1) {
 		for(j=0; j<3; j++)
 		{
 			for(i=j; i<3; i++)
 			{
+				duty_value += 0.1;
+				iPWM_SetDuty(duty_value);
 				iGPIO_Write(5, i-j, 1);
 				vTaskDelayUntil( &xLastWakeTime, xPeriodicity );
+				
 			}
 			for(i=j; i<3; i++)
 			{
+				duty_value += 0.1;
+				iPWM_SetDuty(duty_value);
 				iGPIO_Write(5, i-j, 0);
 				vTaskDelayUntil( &xLastWakeTime, xPeriodicity );
+			}
+			if(duty_value > 99)
+			{
+				duty_value = 0;
 			}
 		}
 	}

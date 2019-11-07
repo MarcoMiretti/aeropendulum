@@ -20,17 +20,7 @@
 
 #include "lpc4337_HAL.h"
 /** @}"*/
-/*---------------------------------------------------------------------------*/
-/** \addtogroup Preprocessor defines
- *  @{
- */
-/** \addtogroup SCU defines
- *  @{
- */
-#define SCU_BASE	(uint32_t)(0x40086000)
-#define SFSP2_2		(uint32_t)(0x00000108)
-/** @}"*/
-/** @}"*/
+
 /*---------------------------------------------------------------------------*/
 /** \addtogroup main function definitions 
  *  @{

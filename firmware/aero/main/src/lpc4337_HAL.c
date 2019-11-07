@@ -6,7 +6,7 @@
 
 #include "main.h"
 #include "lpc4337_HAL.h"
-
+#include "chip.h"
 /**
  * \addtogroup GPIO
  * @{
@@ -70,3 +70,35 @@ int iGPIO_Write(int PORT, int GPIO, int DATA_BIT)
 	}
 }
 /** @}*/
+
+/*-----------------------------------------------------------------/PWM/-----*/
+/**
+ * \brief Init SCT as PWM for pins 2.10 and 4.4
+ * \return 0 if success.
+ */
+int iPWM_Init(void)
+{			
+	Chip_SCU_PinMuxSet(0x2, 10, (SCU_MODE_INACT | SCU_MODE_FUNC1));	/**< Pin 2.10 as SCT out2 (LED testigo) */
+	Chip_SCU_PinMuxSet(0x4, 4, (SCU_MODE_INACT | SCU_MODE_FUNC1));	/**< Pin 4.4 as SCT out2 (PWM out) */
+	
+	Chip_SCTPWM_Init(SCT_PWM);					/**< Initializa SCT */
+	Chip_SCTPWM_SetRate(SCT_PWM, PWM_FREQ);				/**< Set PWM rate */
+	Chip_SCTPWM_SetOutPin(SCT_PWM, 2, 2);				/**< Set Out pin LED */
+	Chip_SCTPWM_SetOutPin(SCT_PWM, 4, 4);				/**< Set Out pin PWM out */
+	Chip_SCTPWM_SetDutyCycle(SCT_PWM, 2, 0); 			/**< Set duty to zero (init) */
+	Chip_SCTPWM_Start(SCT_PWM);					/**< Start PWM */
+	
+	return 0;
+}
+
+/**
+ * \brief Set PWM duty percentage.
+ * \return 0 if success.
+ */
+int iPWM_SetDuty(float duty)
+{			
+	Chip_SCTPWM_SetDutyCycle(SCT_PWM, 2, Chip_SCTPWM_PercentageToTicks(SCT_PWM, duty)); 	/**< Calculate and set duty percentage */
+	return 0;
+}
+
+
