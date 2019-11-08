@@ -31,6 +31,8 @@ Se espera que el proyecto siga la siguente estructura:
 |	|	|	+-- *.fcstd
 |	|	+-- stl
 |	|	|	+-- *.stl
+| 	+-- blueprints
+| 	| 	+-- *.*
 ```
 ## Lineamientos de código
 
