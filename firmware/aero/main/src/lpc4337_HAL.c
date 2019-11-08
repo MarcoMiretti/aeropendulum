@@ -71,6 +71,10 @@ int iGPIO_Write(int PORT, int GPIO, int DATA_BIT)
 }
 /** @}*/
 
+/**
+ * \addtogroup PWM
+ * @{
+ */
 /*-----------------------------------------------------------------/PWM/-----*/
 /**
  * \brief Init SCT as PWM for pins 2.10 and 4.4
@@ -100,5 +104,4 @@ int iPWM_SetDuty(float duty)
 	Chip_SCTPWM_SetDutyCycle(SCT_PWM, 2, Chip_SCTPWM_PercentageToTicks(SCT_PWM, duty)); 	/**< Calculate and set duty percentage */
 	return 0;
 }
-
-
+/** @} */
