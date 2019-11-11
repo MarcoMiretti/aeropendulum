@@ -84,7 +84,7 @@ uint8_t GPIO_Init(void)
 uint8_t TIM4_Init(void)
 {
 	/* Clock for TIM4*/
-	RCC->APB1ENR |= TIM4_EN;
+	RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
 	
 	/* Set TIM4 */
 	uint16_t tmpcr1 = 0;
@@ -109,7 +109,7 @@ uint8_t TIM4_Init(void)
 uint8_t TIM3_Init(void)
 {
 	/* Clock for TIM3*/
-	RCC->APB1ENR |= TIM3_EN;
+	RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
 	
 	/* Set TIM3 */
 	uint16_t tmpcr1 = 0, tmpccmr1 = 0, tmpccer = 0, tmpsmcr = 0;
