@@ -1,3 +1,7 @@
+# Build directories
+firmware/debug/
+firmware/release/
+
 # Prerequisites
 *.d
 
