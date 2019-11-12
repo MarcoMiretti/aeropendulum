@@ -10,10 +10,16 @@ Se espera que el proyecto siga la siguente estructura:
 |
 +-- firmware
 |	+-- Makefile
-|	+-- libs (not yet commited)
-|	|	+-- (not yet commited)
-|	+-- scripts (not yet commited)
-|	|	+-- (not yet commited)
+|	+-- libs 
+|	|	+-- cmsis
+|	|	|	+-- inc
+|	|	|	|	+-- (cmsis headers)
+|	|	|	+-- src
+|	|	|	|	+-- (cmsis sources) 
+|	+-- scripts
+|	|	+-- openocd
+|	|	|	+-- stm32f4discovery.cfg
+|	|	|	+-- gdbinit
 |	+-- aero
 |	|	+-- inc
 |	|	|	+-- main.h
@@ -48,24 +54,41 @@ Si es posible, se busca utilizar:
 ### Linux:
 ```
 cd firmware
-TODO: UPDATE
+make
 ```
 #### Prequisitos
-* arm-none-eabi-gcc
-* st-util
+* arm-none-eabi-*
 * GNU Make
-* OpenOCD
 
-## Flash
+## Target Download
 ### Linux
 
 ```
 cd firmware
-TODO: UPDATE
+make download
 ```
 
 #### Prequisitos
-* arm-none-eabi-gcc
-* st-util
+* arm-none-eabi-*
+* GNU Make
+* OpenOCD
+
+## Debug
+### Linux
+
+```
+cd firmware
+make server_open
+```
+
+open new terminal
+
+```
+cd firmware
+make server_connect 
+```
+
+#### Prequisitos
+* arm-none-eabi-*
 * GNU Make
 * OpenOCD
