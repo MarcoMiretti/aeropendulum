@@ -57,8 +57,10 @@ LD=$(TOOLCHAIN)-gcc
 else
 LD=$(TOOLCHAIN)-g++
 endif
+OOCD 		 = openocd
 
 LDSCRIPT	 = $(cmsis_dir)/loader/stm32_flash.ld
+OOCD_SCRIPT 	 = scripts/openocd/stm32f4discovery.cfg
 
 INCLUDE_FLAGS 	 = $(foreach l, $(LIBS), -I$(l)inc) -I$(inc_dir)
 TARGET_FLAGS 	 = -mlittle-endian -mthumb -mcpu=cortex-m4 -mthumb-interwork \
@@ -144,6 +146,22 @@ clean:
 	$(RMD) $(build_dir)
 
 .PHONY: flash
+	
+download: $(TARGET)
+	@echo DOWNLOAD to TARGET
+	$(Q)$(OOCD) -f $(OOCD_SCRIPT) \
+		-c "init" \
+		-c "halt 0" \
+		-c "flash write_image erase unlock $<" \
+		-c "reset run" \
+		-c "shutdown" 2>&1
+		
+server_open:
+	@echo DOWNLOAD to FLASH
+	$(Q)$(OOCD) -f $(OOCD_SCRIPT) \
+		-c "init" \
+		-c "halt 0" 
 
-download:
-	$(FLASH_TOOL) write $(TARGET_BIN) 0x8000000
+server_connect: $(TARGET)
+	@echo CONNECTING to DEBUG SESSION and DOWNLOADING TARGET	
+	$(Q)arm-none-eabi-gdb -x scripts/openocd/gdbinit
