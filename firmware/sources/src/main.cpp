@@ -1,25 +1,28 @@
-/**
-  **********************************************************************
-  * @file    main.c
-  * @author  Marco Miretti
-  * @brief   TODO: write brief
-  *
-  *	TODO: write long project description
-  *
-  **********************************************************************
-  * @section LICENSE TODO: choose license
-  **********************************************************************
-  */
-
+/**---------------------------------------------------------------------------/
+ * \file	main.cpp
+ * \author 	Marco Miretti \see https://github.com/MarcoMiretti
+ * \copyright 	License: gpl-3.0 (see LICENSE.txt)
+ * \date 	2019/10/30
+ * 
+ * \brief 	main file, entry point and pin definitions.
+ *---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/** \addtogroup Included dependencies
+ *  @{
+ */
 #include "main.h"
+/** @}*/
 
+/** \addtogroup function definitions 
+ *  @{
+ */
 uint8_t GPIO_Init(void);
 uint8_t TIM3_Init(void);
 uint8_t TIM4_Init(void);
 uint8_t PWM_Init(void);
 uint8_t PWM_SetDuty(uint8_t duty);
 uint8_t blinkLed4(void);
-
+/** @} */
 
 /**
   * @brief  Application entry point.
@@ -45,13 +48,13 @@ uint8_t GPIO_Init(void)
 	RCC->AHB1ENR 	|= (uint32_t)(RCC_AHB1ENR_GPIODEN | RCC_AHB1ENR_GPIOCEN);
 	
 	/* PD12 (LED 4) */
-	GPIOD->MODER 	&= (uint32_t)(~GPIO_MODER_MODE12_1);					
+	GPIOD->MODER 	&= (uint32_t)~(GPIO_MODER_MODE12_1);					
 	GPIOD->MODER 	|= (uint32_t)GPIO_MODER_MODE12_0; 					/* Set LED4 (PD12) as GPIOD output */
-	GPIOD->ODR	 	|= (uint32_t)GPIO_ODR_OD12;
+	GPIOD->ODR	|= (uint32_t)GPIO_ODR_OD12;
 	
 	/* PD14 (PWM - LED 5) */
 	GPIOD->MODER 	|= (uint32_t)GPIO_MODER_MODER14_1;
-	GPIOD->MODER 	&= (uint32_t)(~GPIO_MODER_MODER14_0);					/* PD14 to alternate function MODER14 = 0b10 */
+	GPIOD->MODER 	&= (uint32_t)~(GPIO_MODER_MODER14_0);					/* PD14 to alternate function MODER14 = 0b10 */
 	
 	GPIOD->OSPEEDR 	|= (uint32_t)(GPIO_OSPEEDER_OSPEEDR14_1 | GPIO_OSPEEDER_OSPEEDR14_0); 	/* PD14 to very high speed mode */
 	
@@ -63,9 +66,6 @@ uint8_t GPIO_Init(void)
 	GPIOC->MODER 	&= (uint32_t)~(GPIO_MODER_MODER6_0);					/* PC6 to alternate function MODER6 = 0b10 */
 	GPIOC->MODER 	|= (uint32_t)GPIO_MODER_MODER7_1;
 	GPIOC->MODER 	&= (uint32_t)~(GPIO_MODER_MODER7_0); 					/* PC7 to alternate function MODER7 = 0b10 */
-	
-	//GPIOC->OSPEEDR 	|= (uint32_t)(GPIO_OSPEEDER_OSPEEDR6_1 | GPIO_OSPEEDER_OSPEEDR6_0); 	/* PC6 to very high speed mode */
-	//GPIOC->OSPEEDR 	|= (uint32_t)(GPIO_OSPEEDER_OSPEEDR7_1 | GPIO_OSPEEDER_OSPEEDR7_0); 	/* PC7 to very high speed mode */
 
 	GPIOC->PUPDR 	|= (uint32_t)GPIO_PUPDR_PUPDR6_0; 					/* PC6 to pull-up */
 	GPIOC->PUPDR 	|= (uint32_t)GPIO_PUPDR_PUPDR7_0; 					/* PC7 to pull-up */
