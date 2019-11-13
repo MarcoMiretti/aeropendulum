@@ -34,7 +34,7 @@ DEPS		 = $(OBJ:%.o=%.d)
 #-/options/--------------------------------------------------------------------/
 
 USE_NANO 	 = n
-USE_SEMIHOST 	 = y
+USE_SEMIHOST 	 = y 
 VERBOSE 	 = n
 
 #-/end-options/----------------------------------------------------------------/
@@ -79,14 +79,15 @@ endif
 
 LDFLAGS 	 = $(TARGET_FLAGS)
 LDFLAGS 	+= -T$(LDSCRIPT)
+LDFLAGS		+= -specs=nosys.specs
 
 ifeq ($(USE_NANO),y)
-LDFLAGS 	+= --specs=nano.specs
+LDFLAGS 	+= -specs=nano.specs
 endif
 
 ifeq ($(SEMIHOST),y)
 TARGET_FLAGS 	+= USE_SEMIHOST
-LDFLAGS 	+= --specs=rdimon.specs
+LDFLAGS 	+= -specs=rdimon.specs
 endif
 
 ifeq ($(VERBOSE),y)
