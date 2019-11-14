@@ -15,7 +15,12 @@ Se espera que el proyecto siga la siguente estructura:
 |	|	|	+-- inc
 |	|	|	|	+-- (cmsis headers)
 |	|	|	+-- src
-|	|	|	|	+-- (cmsis sources) 
+|	|	|	|	+-- (cmsis sources)
+|	|	+-- hal
+|	|	|	+-- inc
+|	|	|	|	+-- (hal headers)
+|	|	|	+-- src
+|	|	|	|	+-- (hal sources)
 |	+-- scripts
 |	|	+-- openocd
 |	|	|	+-- stm32f4discovery.cfg
@@ -24,12 +29,10 @@ Se espera que el proyecto siga la siguente estructura:
 |	|	+-- inc
 |	|	|	+-- main.h
 |	|	|	+-- FreeRTOSConfig.h
-|	|	|	+-- lpc4337_HAL.h
 |	|       |	+-- (tasks and/or files headers)
 |	|	+-- src
-|	|       |	+-- main.c (aquí la descripción del proyecto)
+|	|       |	+-- main.c
 |	|	|	+-- FreeRTOSConfig.c
-|	|	|	+-- lpc4337_HAL.c
 |	|       |	+-- (tasks and/or files headers)
 +-- mechanical
 |	+-- 3DPrints
