@@ -10,7 +10,9 @@
 /** \addtogroup Included dependencies
  *  @{
  */
+#include <cstdio>
 #include "main.h"
+#include "stm32f4xx_HAL.h"
 /** @}*/
 
 /** \addtogroup function definitions 
@@ -45,35 +47,35 @@ int main(void)
 uint8_t GPIO_Init(void)
 {
 	/* Clock for GPIOD and GPIOC */
-	RCC->AHB1ENR 	|= (uint32_t)(RCC_AHB1ENR_GPIODEN | RCC_AHB1ENR_GPIOCEN);
-	
-	/* PD12 (LED 4) */
-	GPIOD->MODER 	&= (uint32_t)~(GPIO_MODER_MODE12_1);					
-	GPIOD->MODER 	|= (uint32_t)GPIO_MODER_MODE12_0; 					/* Set LED4 (PD12) as GPIOD output */
-	GPIOD->ODR	|= (uint32_t)GPIO_ODR_OD12;
-	
-	/* PD14 (PWM - LED 5) */
-	GPIOD->MODER 	|= (uint32_t)GPIO_MODER_MODER14_1;
-	GPIOD->MODER 	&= (uint32_t)~(GPIO_MODER_MODER14_0);					/* PD14 to alternate function MODER14 = 0b10 */
-	
-	GPIOD->OSPEEDR 	|= (uint32_t)(GPIO_OSPEEDER_OSPEEDR14_1 | GPIO_OSPEEDER_OSPEEDR14_0); 	/* PD14 to very high speed mode */
-	
-	GPIOD->AFR[1] 	&= (uint32_t)~(GPIO_AFRH_AFRH6_3 | GPIO_AFRH_AFRH6_2 | GPIO_AFRH_AFRH6_0);
-	GPIOD->AFR[1] 	|= (uint32_t)(GPIO_AFRH_AFRH6_1);					/* PD14 mapped to AF2 (TIM4) */
+	RCC_GPIOPortSetClock((uint8_t)2,(uint8_t)1);
+	RCC_GPIOPortSetClock((uint8_t)3,(uint8_t)1);
 
-	/* PC6 & PC7 (quadrature encoder) */
-	GPIOC->MODER 	|= (uint32_t)GPIO_MODER_MODER6_1;
-	GPIOC->MODER 	&= (uint32_t)~(GPIO_MODER_MODER6_0);					/* PC6 to alternate function MODER6 = 0b10 */
-	GPIOC->MODER 	|= (uint32_t)GPIO_MODER_MODER7_1;
-	GPIOC->MODER 	&= (uint32_t)~(GPIO_MODER_MODER7_0); 					/* PC7 to alternate function MODER7 = 0b10 */
+	/* Set LED4 (PD12) as GPIO output */
+	GPIO_ModeSet(3,12,1);
+	GPIO_OutData(3,12,1);	
 
-	GPIOC->PUPDR 	|= (uint32_t)GPIO_PUPDR_PUPDR6_0; 					/* PC6 to pull-up */
-	GPIOC->PUPDR 	|= (uint32_t)GPIO_PUPDR_PUPDR7_0; 					/* PC7 to pull-up */
+	/* Set LED5 (PD14) as alternate function */
+	GPIO_ModeSet(3,14,2);
+	/* Set LED5 (PD14) to very high speed mode */
+	GPIO_OutSpeed(3,14,3);
+	
+	/* PD14 mapped to AF2 (TIM4) */
+	GPIO_SetAlternateFunction(3,14,2);
+	
+	/* PC6 & PC7 to alternate mode (for quadrature encoder) */
+	GPIO_ModeSet(2,6,2);
+	GPIO_ModeSet(2,7,2);
+	
+	/* Set PC6 to Pull-Up */
+	GPIO_SetPullUpPullDown(2,6,1);
+	/* Set PC7 to Pull-Up */
+	GPIO_SetPullUpPullDown(2,7,1);
 
-	GPIOC->AFR[0] 	&= (uint32_t)~(GPIO_AFRL_AFRL6_3 | GPIO_AFRL_AFRL6_2 | GPIO_AFRL_AFRL6_0);
-	GPIOC->AFR[0] 	|= (uint32_t)(GPIO_AFRL_AFRL6_1);					/* PC6 mapped to AF2 (TIM3 CH1) */
-	GPIOC->AFR[0] 	&= (uint32_t)~(GPIO_AFRL_AFRL7_3 | GPIO_AFRL_AFRL7_2 | GPIO_AFRL_AFRL7_0);
-	GPIOC->AFR[0] 	|= (uint32_t)(GPIO_AFRL_AFRL7_1);					/* PC7 mapped to AF2 (TIM3 CH2) */	
+	/* PC6 mapped to AF2 (TIM3 CH1) */
+	GPIO_SetAlternateFunction(2,6,2);
+	/* PC7 mapped to AF2 (TIM3 CH2) */
+	GPIO_SetAlternateFunction(2,7,2);
+	
 	return 0;
 }
 
@@ -195,12 +197,18 @@ uint8_t PWM_SetDuty(uint8_t duty)
 uint8_t blinkLed4(void)
 {
 	volatile unsigned int i =0;
+	volatile unsigned int j =0;
 	/* Infinite Loop */
 	while(1)
 	{
-		for (i = 0; i < 1000000; ++i) ; GPIOD -> ODR |= LD4_GPIO_PIN;
-		PWM_SetDuty((TIM3->CNT*100)/0xFFFF);
-		for (i = 0; i < 1000000; ++i) ; GPIOD -> ODR &= ~LD4_GPIO_PIN;
+		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,1);
+		//PWM_SetDuty((TIM3->CNT*100)/0xFFFF);
+		PWM_SetDuty(j);
+		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,0);
+		j = j+10;
+		if(j>100) j=0;
+		printf("Printing position: ");
 	}
+
 	return 0;
 }
