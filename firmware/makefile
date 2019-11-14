@@ -87,9 +87,8 @@ endif
 
 ifeq ($(SEMIHOST),y)
 TARGET_FLAGS 	+= USE_SEMIHOST
-LDFLAGS 	+= -specs=rdimon.specs
+LDFLAGS 	+= -specs=rdimon.specs -lc -lrdimon
 endif
-
 ifeq ($(VERBOSE),y)
 Q=
 else
@@ -161,8 +160,8 @@ server_open:
 	@echo DOWNLOAD to FLASH
 	$(Q)$(OOCD) -f $(OOCD_SCRIPT) \
 		-c "init" \
-		-c "halt 0" 
+		-c "halt 0"
 
 server_connect: $(TARGET)
 	@echo CONNECTING to DEBUG SESSION and DOWNLOADING TARGET	
-	$(Q)arm-none-eabi-gdb -x scripts/openocd/gdbinit
+	$(Q)arm-none-eabi-gdb $< -x scripts/openocd/gdbinit
