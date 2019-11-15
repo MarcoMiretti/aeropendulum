@@ -165,3 +165,11 @@ server_open:
 server_connect: $(TARGET)
 	@echo CONNECTING to DEBUG SESSION and DOWNLOADING TARGET	
 	$(Q)arm-none-eabi-gdb $< -x scripts/openocd/gdbinit
+
+documentation:
+	@echo CALL DOXYGEN
+	$(Q) cd ../docs && doxygen stm32aero.config && \
+	      	cd latex && \
+		make && \
+		cp refman.pdf ../
+

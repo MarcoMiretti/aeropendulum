@@ -95,3 +95,15 @@ make server_connect
 * arm-none-eabi-*
 * GNU Make
 * OpenOCD
+
+## Generate documentation
+### Linux
+```
+cd firmware
+make documentation
+```
+
+#### Prequisitos
+* GNU Make
+* doxygen
+* pdflatex
