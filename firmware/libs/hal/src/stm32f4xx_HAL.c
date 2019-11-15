@@ -1,5 +1,5 @@
 /**
- * \file 	stm32f4_HAL.c
+ * \file 	stm32f4xx_HAL.c
  * \author 	Marco Miretti \see https://github.com/MarcoMiretti
  * \copyright 	License: gpl-3.0 (see LICENSE.txt)
  * \date 	2019/11/13

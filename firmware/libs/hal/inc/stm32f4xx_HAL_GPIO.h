@@ -1,5 +1,5 @@
 /**
- * \file	stm32f4_HAL_GPIO.h	
+ * \file	stm32f4xx_HAL_GPIO.h	
  * \author 	Marco Miretti \see https://github.com/MarcoMiretti
  * \copyright 	License: gpl-3.0 (see LICENSE.txt)
  * \date 	2019/11/13
@@ -11,7 +11,7 @@
 #ifndef __STM32F4_HAL_GPIO_H
 #define __STM32F4_HAL_GPIO_H
 
-/** \addtogroup Included dependencies
+/** \addtogroup deps
  *  @{
  */
 #include "stm32f4xx_HAL.h"
@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 /**
- * \addtogroup Function primitives
+ * \addtogroup primitives
  * @{
  */
 uint8_t GPIO_ModeSet(uint8_t port, uint8_t pin, uint8_t mode);

@@ -7,15 +7,13 @@
  * \brief 	main file, entry point and pin definitions.
  */
 /*---------------------------------------------------------------------------*/
-/** \addtogroup Included dependencies
+/** \addtogroup deps Included dependencies
  *  @{
  */
-#include <cstdio>
 #include "main.h"
-#include "stm32f4xx_HAL.h"
 /** @}*/
 
-/** \addtogroup function definitions 
+/** \addtogroup defs Function definitions 
  *  @{
  */
 uint8_t GPIO_Init(void);
@@ -28,7 +26,7 @@ uint8_t blinkLed4(void);
 
 /**
   * @brief  Application entry point.
-  * @retval int
+  * @retval 0 if success.
   */
 int main(void)
 {
@@ -42,7 +40,7 @@ int main(void)
 
 /**
   * @brief  Enables and sets peripherals.
-  * @retval int
+  * @retval 0 if success.
   */
 uint8_t GPIO_Init(void)
 {
@@ -98,7 +96,7 @@ uint8_t GPIO_Init(void)
 
 /**
   * @brief  Init sequence for TIM4.
-  * @retval int
+  * @retval 0 if success.
   */
 uint8_t TIM4_Init(void)
 {
@@ -123,7 +121,7 @@ uint8_t TIM4_Init(void)
 
 /**
   * @brief  Init sequence for TIM3.
-  * @retval int
+  * @retval 0 if success.
   */
 uint8_t TIM3_Init(void)
 {
@@ -163,7 +161,7 @@ uint8_t TIM3_Init(void)
 
 /**
   * @brief  Init sequence for PWM.
-  * @retval int
+  * @retval 0 if success.
   */
 uint8_t PWM_Init(void)
 {
@@ -195,9 +193,9 @@ uint8_t PWM_Init(void)
 
 /**
   * @brief  Change pwm duty value.
-  * @param	duty: integer between 0 and 100 corresponding to the duty 
+  * @param  duty: integer between 0 and 100 corresponding to the duty 
   * 		percentage.
-  * @retval int
+  * @retval 0 if success
   */
 uint8_t PWM_SetDuty(uint8_t duty)
 {
@@ -209,7 +207,7 @@ uint8_t PWM_SetDuty(uint8_t duty)
 
 /**
   * @brief  Creates an infinite loop where the LD4 blinks.
-  * @retval int
+  * @retval 0 if success
   */
 uint8_t blinkLed4(void)
 {

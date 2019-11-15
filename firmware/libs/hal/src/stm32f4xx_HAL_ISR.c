@@ -1,5 +1,5 @@
 /**
- * \file	stm32f4_HAL_ISR.c	
+ * \file	stm32f4xx_HAL_ISR.c	
  * \author 	Marco Miretti \see https://github.com/MarcoMiretti
  * \copyright 	License: gpl-3.0 (see LICENSE.txt)
  * \date 	2019/11/15
@@ -7,20 +7,20 @@
  * \brief 	ISR_HAL source file
  */
 /*---------------------------------------------------------------------------*/
-/** \addtogroup Included headers 
+/** \addtogroup includes
  *  @{
  */
 #include "stm32f4xx_HAL_ISR.h"
 /** @}*/
 
 /**
- * \addtogroup Interrupt Service Routines
+ * \addtogroup ISR Interrupt Service Routines
  * @{
  */
 
 /**
  * \brief 	Handle External interrupt 0
- * \return 	0 if success, -1 if error
+ * \retval 	0 if success, -1 if error
  */ 
 uint8_t EXTI0_IRQHandler(void)
 {

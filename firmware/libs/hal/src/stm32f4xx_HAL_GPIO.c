@@ -1,5 +1,5 @@
 /**
- * \file	stm32f4_HAL_GPIO.c	
+ * \file	stm32f4xx_HAL_GPIO.c	
  * \author 	Marco Miretti \see https://github.com/MarcoMiretti
  * \copyright 	License: gpl-3.0 (see LICENSE.txt)
  * \date 	2019/11/13
@@ -8,14 +8,14 @@
  */
 /*---------------------------------------------------------------------------*/
 
-/** \addtogroup Included headers 
+/** \addtogroup includes Included headers 
  *  @{
  */
 #include "stm32f4xx_HAL.h"
 /** @}*/
 
 /**
- * \addtogroup GPIO Functions
+ * \addtogroup GPIO_Functions GPIO Functions
  * @{
  */
 
@@ -28,7 +28,7 @@
  * 		0b01 = Output
  * 		0b10 = Alternate function
  * 		0b11 = Analog mode
- * \return 0 if success
+ * \retval 0 if success
  */
 uint8_t GPIO_ModeSet(uint8_t port, uint8_t pin, uint8_t mode)
 {
@@ -46,7 +46,6 @@ uint8_t GPIO_ModeSet(uint8_t port, uint8_t pin, uint8_t mode)
 	*GPIOx	 	|=  (uint32_t)(mode<<(2*pin));
 	return 0;
 }
-/** @}*/
 
 /**
  * \brief Set GPIO Pull up/down config (with PUPDR reg.)
@@ -75,7 +74,6 @@ uint8_t GPIO_SetPullUpPullDown(uint8_t port, uint8_t pin, uint8_t pupd)
 	*GPIOx	 	|=  (uint32_t)(pupd<<(2*pin));
 	return 0;
 }
-/** @}*/
 
 /**
  * \brief Set GPIO Out Speed (with OSPEEDR reg.)
@@ -86,7 +84,7 @@ uint8_t GPIO_SetPullUpPullDown(uint8_t port, uint8_t pin, uint8_t pupd)
  * 		0b01 = Medium (limit 10MHz)
  * 		0b10 = High (limit 50MHz)
  * 		0b11 = Very High (limit 100MHz)
- * \return 0 if success
+ * \retval 0 if success
  */
 uint8_t GPIO_OutSpeed(uint8_t port, uint8_t pin, uint8_t speed)
 {
@@ -104,14 +102,13 @@ uint8_t GPIO_OutSpeed(uint8_t port, uint8_t pin, uint8_t speed)
 	*GPIOx	 	|=  (uint32_t)(speed<<(2*pin));
 	return 0;
 }
-/** @}*/
 
 /**
  * \brief Set GPIO Alternate Function (with AFRL and AFRH reg.)
  * \param port The GPIO Port (A=0, I=8)
  * \param pin The GPIO pin number
  * \param af The Alternate function number
- * \return 0 if success
+ * \retval 0 if success
  */
 uint8_t GPIO_SetAlternateFunction(uint8_t port, uint8_t pin, uint8_t af)
 {
@@ -135,7 +132,6 @@ uint8_t GPIO_SetAlternateFunction(uint8_t port, uint8_t pin, uint8_t af)
 	*GPIOx	 	|=  (uint32_t)(af<<(4*pin));
 	return 0;
 }
-/** @}*/
 
 /**
  * \brief Set GPIO Out Data (with ODR reg.)
@@ -144,7 +140,7 @@ uint8_t GPIO_SetAlternateFunction(uint8_t port, uint8_t pin, uint8_t af)
  * \param dir Output data:
  * 		0b00 = In
  * 		0b01 = Out
- * \return 0 if success
+ * \retval 0 if success
  */
 uint8_t GPIO_OutData(uint8_t port, uint8_t pin, uint8_t data)
 {

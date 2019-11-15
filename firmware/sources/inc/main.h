@@ -12,9 +12,10 @@
 #ifndef __MAIN_H
 #define __MAIN_H
 
+#include <cstdio>
 #include "stm32f4xx_HAL.h"
 
-/** @defgroup GPIO_Constants
+/** @addtogroup GPIO_Constants GPIO Constants
   * @{
   */
 #define LD4_GPIO_PIN 		(1 << 12)  				/* PD12 */
@@ -28,12 +29,12 @@
   */
   
 
-/** @defgroup TIM_Constants
+/** @addtogroup TIM_Constants TIM Constants
   * @{
   */
 #define TIM4_ARR 			((uint16_t)0x20CF)		/* Auto reload register = 84000000 / 10000 - 1 = 8399 set for 10kHz PWM*/
 #define TIM_PSCReloadMode_Immediate     ((uint16_t)0x0001)
-/** @defgroup PWM_Constants
+/** @addtogroup PWM_Constants PWM Constants
   * @{
   */
 #define TIM4_CCMR2_OC3M 		((uint16_t)0x0070)		/* PWM mode 2 */
