@@ -1,11 +1,11 @@
-/**---------------------------------------------------------------------------/
+/**
  * \file	main.cpp
  * \author 	Marco Miretti \see https://github.com/MarcoMiretti
  * \copyright 	License: gpl-3.0 (see LICENSE.txt)
  * \date 	2019/10/30
  * 
  * \brief 	main file, entry point and pin definitions.
- *---------------------------------------------------------------------------*/
+ */
 /*---------------------------------------------------------------------------*/
 /** \addtogroup Included dependencies
  *  @{
