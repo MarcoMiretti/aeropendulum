@@ -28,8 +28,8 @@
 uint8_t RCC_GPIOPortSetClock(uint8_t port, uint8_t state)
 {
 	/* Assert between limit values */
-	assert((port > -1) & (port < 9));
-	assert((state == 1) | (state == 0));
+	assert((port > -1) && (port < 9));
+	assert((state == 1) || (state == 0));
 	/* Clean possible previous value */
 	RCC->AHB1ENR	&= ~(uint32_t)(1 << port);
 	/* Set new value */

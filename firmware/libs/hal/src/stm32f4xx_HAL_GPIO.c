@@ -33,9 +33,9 @@
 uint8_t GPIO_ModeSet(uint8_t port, uint8_t pin, uint8_t mode)
 {
 	/* Assert limit values */
-	assert((port > -1) & (port < 8));
-	assert((pin > -1) & (pin < 16));
-       	assert((mode > -1) & (mode < 4));	
+	assert((port > -1) && (port < 8));
+	assert((pin > -1) && (pin < 16));
+       	assert((mode > -1) && (mode < 4));	
 	/* Calculate address */
 	uint32_t *GPIOx;
 	uint32_t ADDRESS = (GPIOA_BASE + port*0x0400);
@@ -62,9 +62,9 @@ uint8_t GPIO_ModeSet(uint8_t port, uint8_t pin, uint8_t mode)
 uint8_t GPIO_SetPullUpPullDown(uint8_t port, uint8_t pin, uint8_t pupd)
 {
 	/* Assert limit values */
-	assert((port > -1) & (port < 8));
-	assert((pin > -1) & (pin < 16));
-       	assert((pupd > -1) & (pupd < 4));	
+	assert((port > -1) && (port < 8));
+	assert((pin > -1) && (pin < 16));
+       	assert((pupd > -1) && (pupd < 4));	
 	/* Calculate address */
 	uint32_t *GPIOx;
 	uint32_t ADDRESS = GPIOA_BASE + port*0x0400 + 0x0C;
@@ -91,9 +91,9 @@ uint8_t GPIO_SetPullUpPullDown(uint8_t port, uint8_t pin, uint8_t pupd)
 uint8_t GPIO_OutSpeed(uint8_t port, uint8_t pin, uint8_t speed)
 {
 	/* Assert limit values */
-	assert((port > -1) & (port < 8));
-	assert((pin > -1) & (pin < 16));
-       	assert((speed > -1) & (speed < 4));	
+	assert((port > -1) && (port < 8));
+	assert((pin > -1) && (pin < 16));
+       	assert((speed > -1) && (speed < 4));	
 	/* Calculate address */
 	uint32_t *GPIOx;
 	uint32_t ADDRESS = GPIOA_BASE + port*0x0400 + 0x08;
@@ -116,9 +116,9 @@ uint8_t GPIO_OutSpeed(uint8_t port, uint8_t pin, uint8_t speed)
 uint8_t GPIO_SetAlternateFunction(uint8_t port, uint8_t pin, uint8_t af)
 {
 	/* Assert limit values */
-	assert((port > -1) & (port < 8));
-	assert((pin > -1) & (pin < 16));
-       	assert((af > -1) & (af < 16));	
+	assert((port > -1) && (port < 8));
+	assert((pin > -1) && (pin < 16));
+       	assert((af > -1) && (af < 16));	
 	/* Calculate address */
 	uint8_t HIGH_OFFSET = 0;
 	if(pin > 7)
@@ -137,7 +137,6 @@ uint8_t GPIO_SetAlternateFunction(uint8_t port, uint8_t pin, uint8_t af)
 }
 /** @}*/
 
-
 /**
  * \brief Set GPIO Out Data (with ODR reg.)
  * \param port The GPIO Port (A=0, I=8)
@@ -150,9 +149,9 @@ uint8_t GPIO_SetAlternateFunction(uint8_t port, uint8_t pin, uint8_t af)
 uint8_t GPIO_OutData(uint8_t port, uint8_t pin, uint8_t data)
 {
 	/* Assert limit values */
-	assert((port > -1) & (port < 8));
-	assert((pin > -1) & (pin < 16));
-       	assert((data == 1) | (data == 0));	
+	assert((port > -1) && (port < 8));
+	assert((pin > -1) && (pin < 16));
+       	assert((data == 1) || (data == 0));	
 	/* Calculate address */
 	uint32_t *GPIOx;
 	uint32_t ADDRESS = GPIOA_BASE + port*0x0400 + 0x14;
