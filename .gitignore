@@ -2,6 +2,9 @@
 firmware/debug/
 firmware/release/
 
+# Raw docs directories
+docs/latex/
+docs/html/
 # Prerequisites
 *.d
 
