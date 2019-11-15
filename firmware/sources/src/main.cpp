@@ -47,12 +47,27 @@ int main(void)
 uint8_t GPIO_Init(void)
 {
 	/* Clock for GPIOD and GPIOC */
-	RCC_GPIOPortSetClock((uint8_t)2,(uint8_t)1);
-	RCC_GPIOPortSetClock((uint8_t)3,(uint8_t)1);
+	RCC_GPIOPortSetClock(2,1);
+	RCC_GPIOPortSetClock(3,1);
+	RCC_GPIOPortSetClock(0,1);
 
 	/* Set LED4 (PD12) as GPIO output */
 	GPIO_ModeSet(3,12,1);
-	GPIO_OutData(3,12,1);	
+	GPIO_OutData(3,12,1);
+
+	/* Set User button (PA0) as GPIO input */
+	GPIO_ModeSet(0,0,0);
+	/* Set PA0 as pull-down */
+	GPIO_SetPullUpPullDown(2,6,2);
+
+	/* Configure interrupt for EXTI0 */
+	NVIC_SetPriority(EXTI0_IRQn, 1);
+	NVIC_EnableIRQ(EXTI0_IRQn);
+
+	/* Unmask line 0 */
+	EXTI->IMR |= 1;
+	/* Set line 0 as rising edge */
+	EXTI->RTSR |= 1;
 
 	/* Set LED5 (PD14) as alternate function */
 	GPIO_ModeSet(3,14,2);
@@ -78,6 +93,8 @@ uint8_t GPIO_Init(void)
 	
 	return 0;
 }
+
+
 
 /**
   * @brief  Init sequence for TIM4.
