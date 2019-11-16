@@ -32,15 +32,17 @@
 /** @addtogroup TIM_Constants TIM Constants
   * @{
   */
-#define TIM4_ARR 			((uint16_t)0x20CF)		/* Auto reload register = 84000000 / 10000 - 1 = 8399 set for 10kHz PWM*/
+#define TIM4_PSC			((uint16_t)0x0008)
+#define TIM4_ARR 			((uint16_t)(8000000/(TIM4_PSC*PWM_FREQ)-1))		/* Auto reload register = 8000000 / 46*350 - 1 = 0x1F0 set for 10kHz PWM*/
 #define TIM_PSCReloadMode_Immediate     ((uint16_t)0x0001)
 /** @addtogroup PWM_Constants PWM Constants
   * @{
   */
+#define PWM_FREQ			((uint16_t)100)
 #define TIM4_CCMR2_OC3M 		((uint16_t)0x0070)		/* PWM mode 2 */
 #define TIM4_CCER_CC3E			((uint16_t)0x0001 << 8)
 #define TIM4_CCER_CC3P			((uint16_t)0x0002 << 8) 	/* Polarity Low */
-#define TIM4_CCR3			((uint16_t)0x00FF)  		/* 25% duty TODO: implement a macro */
+#define TIM4_CCR3			((uint16_t)0x0000)  		/* 25% duty TODO: implement a macro */
 #define TIM4_OCPreload_Enable           ((uint16_t)0x0008)
 /**
   * @}

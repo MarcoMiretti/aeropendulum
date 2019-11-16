@@ -20,8 +20,10 @@ uint8_t GPIO_Init(void);
 uint8_t TIM3_Init(void);
 uint8_t TIM4_Init(void);
 uint8_t PWM_Init(void);
-uint8_t PWM_SetDuty(uint8_t duty);
+uint8_t PWM_SetDuty(float duty);
+uint8_t	PWM_SetDuty_Milli(float duty);
 uint8_t blinkLed4(void);
+uint8_t aero_motorTest(void); 
 /** @} */
 
 /**
@@ -34,7 +36,7 @@ int main(void)
 	TIM3_Init();
 	TIM4_Init();
 	PWM_Init();
-	blinkLed4();
+	aero_motorTest();
 	return 0;
 }
 
@@ -44,15 +46,16 @@ int main(void)
   */
 uint8_t GPIO_Init(void)
 {
-	/* Clock for GPIOD and GPIOC */
+	/* Clock for GPIOA,B,C,D */
+	RCC_GPIOPortSetClock(0,1);
+	RCC_GPIOPortSetClock(1,1);
 	RCC_GPIOPortSetClock(2,1);
 	RCC_GPIOPortSetClock(3,1);
-	RCC_GPIOPortSetClock(0,1);
 
 	/* Set LED4 (PD12) as GPIO output */
 	GPIO_ModeSet(3,12,1);
 	GPIO_OutData(3,12,1);
-
+	
 	/* Set User button (PA0) as GPIO input */
 	GPIO_ModeSet(0,0,0);
 	/* Set PA0 as pull-down */
@@ -69,12 +72,18 @@ uint8_t GPIO_Init(void)
 
 	/* Set LED5 (PD14) as alternate function */
 	GPIO_ModeSet(3,14,2);
-	/* Set LED5 (PD14) to very high speed mode */
-	GPIO_OutSpeed(3,14,3);
-	
+	/* Set LED5 (PD14) to low speed mode */
+	GPIO_OutSpeed(3,14,0);
 	/* PD14 mapped to AF2 (TIM4) */
 	GPIO_SetAlternateFunction(3,14,2);
 	
+	/* Set PB8 as alternate function */
+	GPIO_ModeSet(1,8,2);
+	/* Set PB8 to low speed mode */
+	GPIO_OutSpeed(1,8,0);
+	/* PD14 mapped to AF2 (TIM4) */
+	GPIO_SetAlternateFunction(1,8,2);
+
 	/* PC6 & PC7 to alternate mode (for quadrature encoder) */
 	GPIO_ModeSet(2,6,2);
 	GPIO_ModeSet(2,7,2);
@@ -112,7 +121,7 @@ uint8_t TIM4_Init(void)
 	TIM4->CR1 = tmpcr1;
 
 	TIM4->ARR  = TIM4_ARR; 								/* Sets timer period */
-	TIM4->PSC = 0;
+	TIM4->PSC = 8;
 	TIM4->EGR = TIM_PSCReloadMode_Immediate;  					/* Reload PSC */
 	
 	TIM4->CR1 |= TIM_CR1_CEN;							/* Enable TIM4 */
@@ -197,11 +206,22 @@ uint8_t PWM_Init(void)
   * 		percentage.
   * @retval 0 if success
   */
-uint8_t PWM_SetDuty(uint8_t duty)
+uint8_t PWM_SetDuty(float duty)
 {
 	uint16_t tempccr3 = 0;
 	tempccr3 = (TIM4_ARR*duty)/100;
 	TIM4->CCR3 = tempccr3;
+	return 0;
+}
+
+/**
+  * @brief  Set PWM duty value in miliseconds.
+  * @param  duty: float corresponding to the duty value in miliseconds.
+  * @retval 0 if success
+  */
+uint8_t PWM_SetDuty_Milli(float duty)
+{
+	PWM_SetDuty(duty*PWM_FREQ/10);
 	return 0;
 }
 
@@ -216,13 +236,38 @@ uint8_t blinkLed4(void)
 	/* Infinite Loop */
 	while(1)
 	{
-		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,1);
+		for (i = 0; i < 1000000; ++i) ; GPIO_OutData(3,12,1);
 		//PWM_SetDuty((TIM3->CNT*100)/0xFFFF);
 		PWM_SetDuty(j);
-		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,0);
+		for (i = 0; i < 1000000; ++i) ; GPIO_OutData(3,12,0);
 		j = j+10;
 		if(j>100) j=0;
 		printf("Printing position: ");
+	}
+
+	return 0;
+}
+
+/**
+  * @brief  Test the aeropendulum motor with pwm.
+  * @retval 0 if success
+  */
+uint8_t aero_motorTest(void)
+{
+	volatile unsigned int i=0;
+	/* Infinite Loop */
+	PWM_SetDuty_Milli(1.1);
+	for (i = 0; i < 1000000; ++i) ; GPIO_OutData(3,12,1);
+	while(1)
+	{
+		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,0);
+		PWM_SetDuty_Milli(2.2);
+		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,1);
+		PWM_SetDuty_Milli(2.21);
+		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,0);
+		PWM_SetDuty_Milli(2.22);
+		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,1);
+		PWM_SetDuty_Milli(2.23);
 	}
 
 	return 0;
