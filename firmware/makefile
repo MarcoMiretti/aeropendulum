@@ -168,7 +168,10 @@ server_connect: $(TARGET)
 
 documentation:
 	@echo CALL DOXYGEN
-	$(Q) cd ../docs && doxygen stm32aero.config && \
+	$(Q) cd ../docs && \
+		rm -rf latex &&\
+		rm -rf html && \
+		doxygen stm32aero.config && \
 	      	cd latex && \
 		make && \
 		cp refman.pdf ../
