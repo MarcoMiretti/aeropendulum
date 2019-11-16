@@ -11,7 +11,7 @@
 /** \addtogroup includes Included headers 
  *  @{
  */
-#include "stm32f4xx_HAL_GPI_GPIO.h"
+#include "stm32f4xx_HAL_GPIO.h"
 /** @}*/
 
 /**
