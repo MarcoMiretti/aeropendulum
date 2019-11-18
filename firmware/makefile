@@ -16,6 +16,9 @@ TARGET_BIN	 = $(build_dir)/$(PROJ_NAME).bin
 
 LIBS 		 = $(sort $(dir $(wildcard libs/*/)))
 
+FREERTOS	 = middlewares/FreeRTOS/Source
+HEAP		 = heap_4.c
+
 #--Main source files--
 SRC 		 = $(wildcard $(src_dir)/*.c)
 CXXSRC 		 = $(wildcard $(src_dir)/*.cpp)
@@ -26,6 +29,14 @@ SRC 		+= $(foreach l, $(LIBS), $(wildcard $(l)/src/*.c))
 CXXSRC 		+= $(foreach l, $(LIBS), $(wildcard $(l)/src/*.cpp))
 ASRC 		+= $(foreach l, $(LIBS), $(wildcard $(l)/src/*.s))
 
+#--Add middlewares source files--
+##--FreeRTOS--
+SRC		+= $(wildcard $(FREERTOS)/*.c)
+SRC		+= $(FREERTOS)/portable/MemMang/$(HEAP)
+SRC		+= $(FREERTOS)/portable/GCC/ARM_CM4F/port.c
+
+RTOSFLAGS	 = -I$(FREERTOS)/include
+RTOSFLAGS	+= -I$(FREERTOS)/portable/GCC/ARM_CM4F
 
 #--Specify objs and deps--
 OBJECTS		 = $(CXXSRC:%.cpp=$(out_dir)/%.o) $(ASRC:%.s=$(out_dir)/%.o) $(SRC:%.c=$(out_dir)/%.o)
@@ -33,9 +44,9 @@ DEPS		 = $(OBJ:%.o=%.d)
 
 #-/options/--------------------------------------------------------------------/
 
-USE_NANO 	 = n
-USE_SEMIHOST 	 = y 
-VERBOSE 	 = n
+USE_NANO 	?= n
+USE_SEMIHOST 	?= y 
+VERBOSE 	?= n
 
 #-/end-options/----------------------------------------------------------------/
 
@@ -62,7 +73,7 @@ OOCD 		 = openocd
 LDSCRIPT	 = $(cmsis_dir)/loader/stm32_flash.ld
 OOCD_SCRIPT 	 = scripts/openocd/stm32f4discovery.cfg
 
-INCLUDE_FLAGS 	 = $(foreach l, $(LIBS), -I$(l)inc) -I$(inc_dir)
+INCLUDE_FLAGS 	 = $(foreach l, $(LIBS), -I$(l)inc) -I$(inc_dir) $(RTOSFLAGS)
 TARGET_FLAGS 	 = -mlittle-endian -mthumb -mcpu=cortex-m4 -mthumb-interwork \
 		   -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
