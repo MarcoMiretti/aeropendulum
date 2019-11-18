@@ -9,6 +9,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "stm32f4xx_HAL.h"
 
 /**
  * \brief Executes when there are memory allocation problems
@@ -17,7 +18,10 @@
  */
 void vApplicationMallocFailedHook( void )
 {
-	for(;;);
+	vTaskDelay(100/portTICK_PERIOD_MS);
+	GPIO_OutData(3,12,1);
+	vTaskDelay(100/portTICK_PERIOD_MS);
+	GPIO_OutData(3,12,0);
 }
 /**
  * \brief Executes when there is stack overflow
@@ -26,7 +30,10 @@ void vApplicationMallocFailedHook( void )
  */
 void vApplicationStackOverflowHook( xTaskHandle *pxTask, signed char *pcTaskName )
 {
-	for( ;; );
+	vTaskDelay(100/portTICK_PERIOD_MS);
+	GPIO_OutData(3,12,1);
+	vTaskDelay(100/portTICK_PERIOD_MS);
+	GPIO_OutData(3,12,0);
 }
 
 void vApplicationIdleHook( void )

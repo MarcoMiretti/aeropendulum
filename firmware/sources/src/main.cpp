@@ -11,6 +11,9 @@
  *  @{
  */
 #include "main.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "driving.h"
 /** @}*/
 
 /** \addtogroup defs Function definitions 
@@ -20,10 +23,6 @@ uint8_t GPIO_Init(void);
 uint8_t TIM3_Init(void);
 uint8_t TIM4_Init(void);
 uint8_t PWM_Init(void);
-uint8_t PWM_SetDuty(float duty);
-uint8_t	PWM_SetDuty_Milli(float duty);
-uint8_t blinkLed4(void);
-uint8_t aero_motorTest(void); 
 /** @} */
 
 /**
@@ -36,7 +35,9 @@ int main(void)
 	TIM3_Init();
 	TIM4_Init();
 	PWM_Init();
-	aero_motorTest();
+	xTaskCreate( aero_driving, "Aero Driving", 256, NULL, 1, NULL);
+	
+	vTaskStartScheduler();
 	return 0;
 }
 
@@ -197,78 +198,5 @@ uint8_t PWM_Init(void)
 	TIM4->CCR3	= TIM4_CCR3;							/* Set duty */
 	TIM4->CCER	= tmpccer;							/* Enable PWM2 output */
 	TIM4->CCMR2 |= TIM4_OCPreload_Enable;
-	return 0;
-}
-
-/**
-  * @brief  Change pwm duty value.
-  * @param  duty: integer between 0 and 100 corresponding to the duty 
-  * 		percentage.
-  * @retval 0 if success
-  */
-uint8_t PWM_SetDuty(float duty)
-{
-	uint16_t tempccr3 = 0;
-	tempccr3 = (TIM4_ARR*duty)/100;
-	TIM4->CCR3 = tempccr3;
-	return 0;
-}
-
-/**
-  * @brief  Set PWM duty value in miliseconds.
-  * @param  duty: float corresponding to the duty value in miliseconds.
-  * @retval 0 if success
-  */
-uint8_t PWM_SetDuty_Milli(float duty)
-{
-	PWM_SetDuty(duty*PWM_FREQ/10);
-	return 0;
-}
-
-/**
-  * @brief  Creates an infinite loop where the LD4 blinks.
-  * @retval 0 if success
-  */
-uint8_t blinkLed4(void)
-{
-	volatile unsigned int i =0;
-	volatile unsigned int j =0;
-	/* Infinite Loop */
-	while(1)
-	{
-		for (i = 0; i < 1000000; ++i) ; GPIO_OutData(3,12,1);
-		//PWM_SetDuty((TIM3->CNT*100)/0xFFFF);
-		PWM_SetDuty(j);
-		for (i = 0; i < 1000000; ++i) ; GPIO_OutData(3,12,0);
-		j = j+10;
-		if(j>100) j=0;
-		printf("Printing position: ");
-	}
-
-	return 0;
-}
-
-/**
-  * @brief  Test the aeropendulum motor with pwm.
-  * @retval 0 if success
-  */
-uint8_t aero_motorTest(void)
-{
-	volatile unsigned int i=0;
-	/* Infinite Loop */
-	PWM_SetDuty_Milli(1.1);
-	for (i = 0; i < 1000000; ++i) ; GPIO_OutData(3,12,1);
-	while(1)
-	{
-		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,0);
-		PWM_SetDuty_Milli(2.2);
-		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,1);
-		PWM_SetDuty_Milli(2.21);
-		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,0);
-		PWM_SetDuty_Milli(2.22);
-		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,1);
-		PWM_SetDuty_Milli(2.23);
-	}
-
 	return 0;
 }
