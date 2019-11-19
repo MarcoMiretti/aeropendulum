@@ -23,6 +23,7 @@
 uint8_t PWM_setDuty(float duty);
 uint8_t	PWM_setDuty_milli(float duty);
 uint8_t motorTest(void);
+uint8_t bangBangControl(float desiredAngle);
 //uint8_t aero_motorTest(void); 
 /** @} */
 
@@ -45,7 +46,7 @@ class aeropendulum {
  */
 void aero_driving(void *pvParameters)
 {
-	motorTest();
+	bangBangControl(90);
 	while(1)
 	{
 	}
@@ -74,20 +75,23 @@ uint8_t motorTest(void)
   * @brief	Simple On Off control 
   * @retval 	0 if success
   */
-uint8_t bangBangControl(void)
+uint8_t bangBangControl(float desiredAngle)
 {
+	float encoderAngle;
 	aeropendulum aero;
 	aero.motorInit();
 	while(1)
 	{
-		if(aero.getEncoderAngle() < 90)
+		encoderAngle = aero.getEncoderAngle();
+		if(encoderAngle < desiredAngle)
 		{
-		aero.setMotorPower(10);
+			aero.setMotorPower(140);
 		}
 		else
 		{
-		aero.setMotorPower(1);
+			aero.setMotorPower(130);
 		}
+		vTaskDelay(msToTick(1));
 	}	
 	return 0;
 }
@@ -105,7 +109,7 @@ uint8_t bangBangControl(void)
  */
 float aeropendulum::getEncoderAngle(void)
 {
-	aeropendulum::angle = (((TIM3->CNT)/DEGREES_PER_PULSE)+(AERO_BASE_ANGLE));
+	aeropendulum::angle = (((TIM3->CNT)*DEGREES_PER_PULSE)+(AERO_BASE_ANGLE));
 	return aeropendulum::angle;
 }
 
