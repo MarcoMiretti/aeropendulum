@@ -19,4 +19,10 @@
 #include "stm32f4xx_HAL_RCC.h"
 #include "stm32f4xx_HAL_GPIO.h"
 /** @}*/
+
+/** \addtogroup function_macros Function like macros
+ *  @{
+ */
+#define msToTick(ms) 		(ms/portTICK_PERIOD_MS)
+/** @} */
 #endif /* __STM32F4_HAL_H */
