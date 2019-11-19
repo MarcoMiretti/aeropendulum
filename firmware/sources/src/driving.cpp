@@ -20,11 +20,24 @@
 /** \addtogroup defs 
  *  @{
  */
-uint8_t PWM_SetDuty(float duty);
-uint8_t	PWM_SetDuty_Milli(float duty);
-uint8_t blinkLed4(void);
-uint8_t aero_motorTest(void); 
+uint8_t PWM_setDuty(float duty);
+uint8_t	PWM_setDuty_milli(float duty);
+uint8_t motorTest(void);
+//uint8_t aero_motorTest(void); 
 /** @} */
+
+class aeropendulum {
+	public:
+		uint8_t motorInit(void);
+		uint8_t motorOff(void);
+		uint8_t setMotorPower(float);
+		float	getMotorPower(void);
+		float	getEncoderAngle(void);
+	private:
+		float	angle;
+		float	motorPower;
+};
+
 
 /**
  * \brief 	Aeropendulum driving task.
@@ -32,16 +45,130 @@ uint8_t aero_motorTest(void);
  */
 void aero_driving(void *pvParameters)
 {
-	aero_motorTest();
+	motorTest();
+	while(1)
+	{
+	}
 }
 
+
+/**
+  * @brief  Test the aeropendulum motor with pwm.
+  * @retval 0 if success
+  */
+uint8_t motorTest(void)
+{
+	aeropendulum aero;
+	aero.motorInit();
+	aero.setMotorPower(3);
+	GPIO_OutData(3,12,0);
+	vTaskDelay(msToTick(5000));
+	aero.setMotorPower(10);
+	GPIO_OutData(3,12,1);
+	vTaskDelay(msToTick(5000));
+	aero.motorOff();
+	return 0;
+}
+
+/**
+  * @brief	Simple On Off control 
+  * @retval 	0 if success
+  */
+uint8_t bangBangControl(void)
+{
+	aeropendulum aero;
+	aero.motorInit();
+	while(1)
+	{
+		if(aero.getEncoderAngle() < 90)
+		{
+		aero.setMotorPower(10);
+		}
+		else
+		{
+		aero.setMotorPower(1);
+		}
+	}	
+	return 0;
+}
+
+
+
+/**
+ * \addtogroup aero_member_functions Aero members
+ * @{
+ */
+/**
+ * \brief 	Get aeropendulums encoder current angle.
+ * \note 	Since the encoder has 1440 slits, and the quadrature mode detects 4 pules for each slit, it will detect 5760 pulses each full rotation. That is, 1 pulse = 0,0625º or (1/16)º.
+ * \retval 	float Aeropendulum angle.
+ */
+float aeropendulum::getEncoderAngle(void)
+{
+	aeropendulum::angle = (((TIM3->CNT)/DEGREES_PER_PULSE)+(AERO_BASE_ANGLE));
+	return aeropendulum::angle;
+}
+
+/**
+ * \brief	Set propeller power (percentual).
+ * \note 	Use PWM Duty, and propeller limits to set the power.
+ * \param 	power Float between 0 and 100.
+ * \retval	0 if success.
+ * */
+uint8_t aeropendulum::setMotorPower(float power)
+{
+	PWM_setDuty_milli((PROP_POWER_RANGE * power / 100)+PROP_MIN_POWER_MS);
+	aeropendulum::motorPower = power;
+	return 0;
+}
+
+/**
+ * \brief	Get propeller power (percentual).
+ * \retval 	power Float between 0 and 100.
+ * */
+float aeropendulum::getMotorPower()
+{
+	return aeropendulum::motorPower;
+}
+
+/**
+ * \brief 	Propeller init sequence.
+ * \note 	The motor driver needs to see a pwm signal with 1 ms duty for some time in order to start.
+ * TODO: ver que tiempo es el que se necesita
+ * \retval 	0 if success.
+ */
+uint8_t aeropendulum::motorInit(void)
+{
+	PWM_setDuty_milli(PROP_POWERON_MS);
+	vTaskDelay(1000/portTICK_PERIOD_MS);	
+	PWM_setDuty_milli(PROP_MIN_POWER_MS);
+	return 0;
+}
+
+/**
+ * \brief 	Propeller off.
+ * \note 	Send an 1.1ms pwm signal to the motor, this means no power.
+ * TODO: ver que tiempo es el que se necesita
+ * \retval 	0 if success.
+ */
+uint8_t aeropendulum::motorOff(void)
+{
+	PWM_setDuty_milli(PROP_POWERON_MS);
+	return 0;
+}
+/** @} */
+
+/**
+ * \addtogroup pwm_functions PWM Functions
+ * @{
+ */
 /**
   * @brief  Change pwm duty value.
   * @param  duty: integer between 0 and 100 corresponding to the duty 
   * 		percentage.
   * @retval 0 if success
   */
-uint8_t PWM_SetDuty(float duty)
+uint8_t PWM_setDuty(float duty)
 {
 	uint16_t tempccr3 = 0;
 	tempccr3 = (TIM4_ARR*duty)/100;
@@ -54,49 +181,9 @@ uint8_t PWM_SetDuty(float duty)
   * @param  duty: float corresponding to the duty value in miliseconds.
   * @retval 0 if success
   */
-uint8_t PWM_SetDuty_Milli(float duty)
+uint8_t PWM_setDuty_milli(float duty)
 {
-	PWM_SetDuty(duty*PWM_FREQ/10);
+	PWM_setDuty(duty*PWM_FREQ/10);
 	return 0;
 }
-
-/**
-  * @brief  Creates an infinite loop where the LD4 blinks.
-  * @retval 0 if success
-  */
-uint8_t blinkLed4(void)
-{
-	volatile unsigned int i =0;
-	/* Infinite Loop */
-	while(1)
-	{
-		for (i = 0; i < 1000000; ++i) ; GPIO_OutData(3,12,1);
-		for (i = 0; i < 1000000; ++i) ; GPIO_OutData(3,12,0);
-	}
-	return 0;
-}
-
-/**
-  * @brief  Test the aeropendulum motor with pwm.
-  * @retval 0 if success
-  */
-uint8_t aero_motorTest(void)
-{
-	volatile unsigned int i=0;
-	/* Infinite Loop */
-	PWM_SetDuty_Milli(1.1);
-	for (i = 0; i < 1000000; ++i) ; GPIO_OutData(3,12,1);
-	while(1)
-	{
-		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,0);
-		PWM_SetDuty_Milli(2.24);
-		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,1);
-		PWM_SetDuty_Milli(2.24);
-		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,0);
-		PWM_SetDuty_Milli(2.26);
-		for (i = 0; i < 100000; ++i) ; GPIO_OutData(3,12,1);
-		PWM_SetDuty_Milli(2.26);
-	}
-
-	return 0;
-}
+/** @} */

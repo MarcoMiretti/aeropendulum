@@ -12,6 +12,15 @@
 #ifndef __DRIVING_H
 #define __DRIVING_H
 
+#define DEGREES_PER_PULSE 	(float)(0.0625)
+#define AERO_BASE_ANGLE		(float)(22.2855)
+
+#define PROP_MAX_POWER_MS	(float)(2.30) //TODO: define this values propperly
+#define PROP_MIN_POWER_MS	(float)(2.20)
+#define PROP_POWERON_MS		(float)(1.10)
+#define PROP_POWER_RANGE	(float)(PROP_MAX_POWER_MS-PROP_MIN_POWER_MS)
+
+
 /**
  * \addtogroup task_defs Task definitions
  * @{
