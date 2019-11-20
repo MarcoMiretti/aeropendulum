@@ -15,6 +15,7 @@ TARGET 		 = $(build_dir)/$(PROJ_NAME).elf
 TARGET_BIN	 = $(build_dir)/$(PROJ_NAME).bin
 
 LIBS 		 = $(sort $(dir $(wildcard libs/*/)))
+MIDDLEWARES	 = $(sort $(dir $(wildcard middlewares/*/))) 
 
 FREERTOS	 = middlewares/FreeRTOS/Source
 HEAP		 = heap_4.c
@@ -30,6 +31,7 @@ CXXSRC 		+= $(foreach l, $(LIBS), $(wildcard $(l)/src/*.cpp))
 ASRC 		+= $(foreach l, $(LIBS), $(wildcard $(l)/src/*.s))
 
 #--Add middlewares source files--
+SRC 		+= $(foreach l, $(MIDDLEWARES), $(wildcard $(l)/src/*.c))
 ##--FreeRTOS--
 SRC		+= $(wildcard $(FREERTOS)/*.c)
 SRC		+= $(FREERTOS)/portable/MemMang/$(HEAP)
@@ -73,7 +75,7 @@ OOCD 		 = openocd
 LDSCRIPT	 = $(cmsis_dir)/loader/stm32_flash.ld
 OOCD_SCRIPT 	 = scripts/openocd/stm32f4discovery.cfg
 
-INCLUDE_FLAGS 	 = $(foreach l, $(LIBS), -I$(l)inc) -I$(inc_dir) $(RTOSFLAGS)
+INCLUDE_FLAGS 	 = $(foreach l, $(LIBS), -I$(l)inc) -I$(inc_dir) $(RTOSFLAGS) $(foreach l, $(MIDDLEWARES), -I$(l)inc) 
 TARGET_FLAGS 	 = -mlittle-endian -mthumb -mcpu=cortex-m4 -mthumb-interwork \
 		   -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
@@ -87,6 +89,13 @@ CFLAGS 		+= -O0 -g -Wall
 else
 CFLAGS 		+= -O2 -s -DNDEBUG
 endif
+
+ifeq ($(BUILD),debug)
+CXXFLAGS	+= -O0 -g -Wall
+else
+CXXFLAGS 	+= -O2 -s -DNDEBUG
+endif
+
 
 LDFLAGS 	 = $(TARGET_FLAGS)
 LDFLAGS 	+= -T$(LDSCRIPT)
