@@ -12,7 +12,10 @@
 #ifndef __MAIN_H
 #define __MAIN_H
 
+#ifdef __cplusplus
 #include <cstdio>
+#endif
+
 #include "stm32f4xx_HAL.h"
 
 /** @addtogroup GPIO_Constants GPIO Constants
