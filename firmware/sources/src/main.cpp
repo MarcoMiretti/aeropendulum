@@ -14,6 +14,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "driving.h"
+#include "comms.h"
+#include "tm_stm32f4_usb_vcp.h"
 /** @}*/
 
 /** \addtogroup defs Function definitions 
@@ -23,6 +25,7 @@ uint8_t GPIO_Init(void);
 uint8_t TIM3_Init(void);
 uint8_t TIM4_Init(void);
 uint8_t PWM_Init(void);
+uint8_t systemClockConfig();
 /** @} */
 
 /**
@@ -31,13 +34,46 @@ uint8_t PWM_Init(void);
   */
 int main(void)
 {
-	GPIO_Init();
-	TIM3_Init();
-	TIM4_Init();
-	PWM_Init();
-	xTaskCreate( aero_driving, "Aero Driving", 256, NULL, 1, NULL);
+	//SystemInit();
+	uint8_t c;
+	systemClockConfig();
+	USB_VCP_Init();
+//	GPIO_Init();
+//	TIM3_Init();
+//	TIM4_Init();
+//	PWM_Init();
+	
+	while (1)
+	{
+		/* USB configured OK, drivers OK */
+		if (TM_USB_VCP_GetStatus() == TM_USB_VCP_CONNECTED)
+			{
+			if (TM_USB_VCP_Getc(&c) == TM_USB_VCP_DATA_OK)
+			{
+				/* Return data back */
+				TM_USB_VCP_Putc(c);
+			}
+			}
+			else
+			{
+			/* USB not OK */
+			}
+	}
+	xTaskCreate( aero_driving, "Aero Driving", 2048, NULL, 1, NULL);
 	
 	vTaskStartScheduler();
+	return 0;
+}
+
+uint8_t systemClockConfig()
+{
+	RCC->CR &= ~0x05000000;
+	RCC->PLLCFGR = 0x24401804;
+	/* Turn on PLL and HSE */
+	RCC->CR |= 0x01010000;
+	while((RCC->CR & 0x02000000) == 0){}
+	while((RCC->CR & 0x00020000) == 0){}
+
 	return 0;
 }
 
