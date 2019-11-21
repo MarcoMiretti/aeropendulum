@@ -24,6 +24,7 @@ uint8_t PWM_setDuty(float duty);
 uint8_t	PWM_setDuty_milli(float duty);
 uint8_t motorTest(void);
 uint8_t bangBangControl(float desiredAngle);
+uint8_t caracterize(void);
 //uint8_t aero_motorTest(void); 
 /** @} */
 
@@ -46,7 +47,7 @@ class aeropendulum {
  */
 void aero_driving(void *pvParameters)
 {
-	bangBangControl(90);
+	caracterize();
 	while(1)
 	{
 	}
@@ -78,6 +79,8 @@ uint8_t motorTest(void)
 uint8_t bangBangControl(float desiredAngle)
 {
 	float encoderAngle;
+	float motorPowerH= 140;
+	float motorPowerL= 130;
 	aeropendulum aero;
 	aero.motorInit();
 	while(1)
@@ -85,17 +88,45 @@ uint8_t bangBangControl(float desiredAngle)
 		encoderAngle = aero.getEncoderAngle();
 		if(encoderAngle < desiredAngle)
 		{
-			aero.setMotorPower(140);
+			aero.setMotorPower(motorPowerH);
 		}
 		else
 		{
-			aero.setMotorPower(130);
+			aero.setMotorPower(motorPowerL);
 		}
 		vTaskDelay(msToTick(1));
 	}	
 	return 0;
 }
 
+/*
+ * \brief 	Function to carecterize the propellerPower and angle relation.
+ * \return 	Does not return.
+ */
+uint8_t caracterize(void)
+{
+	aeropendulum aero;
+	float motorPower = 2.2; 
+	float encoderAngle = 0;
+	float tmpEncoderAngle;
+	aero.motorInit();
+	PWM_setDuty_milli(motorPower);
+	while(1)
+	{
+		tmpEncoderAngle = aero.getEncoderAngle();
+		if((encoderAngle < 1.05*tmpEncoderAngle) && (encoderAngle > 0.95*tmpEncoderAngle))
+		{
+			encoderAngle = 0;
+			PWM_setDuty_milli(motorPower);
+		}
+		else
+		{
+		encoderAngle = tmpEncoderAngle;
+		vTaskDelay(msToTick(5000));
+		}
+	}
+	return 0;
+}
 
 
 /**
