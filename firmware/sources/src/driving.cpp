@@ -15,6 +15,7 @@
 #include "task.h"
 #include "main.h"
 #include "driving.h"
+#include "arm_math.h"
 /** @}*/
 
 /** \addtogroup defs 
@@ -25,6 +26,8 @@ uint8_t	PWM_setDuty_milli(float duty);
 uint8_t motorTest(void);
 uint8_t bangBangControl(float desiredAngle);
 uint8_t caracterize(void);
+float 	feedbackLinearization(float);
+uint8_t pidControl(float set_point);
 //uint8_t aero_motorTest(void); 
 /** @} */
 
@@ -47,7 +50,7 @@ class aeropendulum {
  */
 void aero_driving(void *pvParameters)
 {
-	caracterize();
+	pidControl(90);
 	while(1)
 	{
 	}
@@ -128,6 +131,63 @@ uint8_t caracterize(void)
 	return 0;
 }
 
+/**
+ * \brief 	Feedback Linearization
+ * \note 	Given that the system is nonlinear, to avoid the usual linearization between points, we can apply a feedback linearization to cancel the nonlinear term that is to add u0+m*g*sin(angle)/k to the manipulated. The values mg/k were infered with steady state tests.
+ * \param	angle	The encoderAngle in radians.
+ * \retval 	Feedback linearization constant.
+ */
+float feedbackLinearization(float angle)
+{
+	float u0 = 2.116;
+	float mgoverK = AERO_MG_K;
+	float sinAngle = arm_sin_f32(angle);
+	return u0 + sinAngle*mgoverK;
+}
+
+/**
+ * \brief 	PID control loop
+ * \return 	Does not return
+ */
+uint8_t pidControl(float set_point)
+{
+	arm_pid_instance_f32 pid;
+	aeropendulum aero;
+	float encoderAngle;
+	float feedbackTerm;
+	float pid_out;
+	float duty;
+	aero.motorInit();
+	pid.Kp = 0.0072;
+	pid.Ki = 0.008;
+	pid.Kd = 0.00432;
+	arm_pid_init_f32(&pid, set_point - aero.getEncoderAngle());
+
+	set_point = set_point*3.14159265/180;
+
+	while(1)
+	{
+		encoderAngle = aero.getEncoderAngle();
+		pid_out = arm_pid_f32(&pid, set_point - encoderAngle);
+		feedbackTerm = feedbackLinearization(encoderAngle);
+
+		duty = pid_out + feedbackTerm;
+
+		if(duty > 2.5)
+		{
+			duty = 2.5;
+		}
+		if(duty < 2.1)
+		{
+			duty = 2.1;
+		}
+		
+		PWM_setDuty_milli(duty);
+
+		vTaskDelay(msToTick(10));
+	}
+	return 0;
+}
 
 /**
  * \addtogroup aero_member_functions Aero members
@@ -140,8 +200,8 @@ uint8_t caracterize(void)
  */
 float aeropendulum::getEncoderAngle(void)
 {
-	aeropendulum::angle = (((TIM3->CNT)*DEGREES_PER_PULSE)+(AERO_BASE_ANGLE));
-	return aeropendulum::angle;
+	angle = (((TIM3->CNT)*DEGREES_PER_PULSE)+(AERO_BASE_ANGLE))*PI/180;
+	return angle;
 }
 
 /**
@@ -176,7 +236,7 @@ uint8_t aeropendulum::motorInit(void)
 {
 	PWM_setDuty_milli(PROP_POWERON_MS);
 	vTaskDelay(1000/portTICK_PERIOD_MS);	
-	PWM_setDuty_milli(PROP_MIN_POWER_MS);
+	PWM_setDuty_milli(2.2);
 	return 0;
 }
 
