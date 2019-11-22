@@ -16,6 +16,7 @@ TARGET_BIN	 = $(build_dir)/$(PROJ_NAME).bin
 
 LIBS 		 = $(sort $(dir $(wildcard libs/*/)))
 MIDDLEWARES	 = $(sort $(dir $(wildcard middlewares/*/))) 
+DSPLIBS		 = $(sort $(dir $(wildcard $(cmsis_dir)/DSP/Source/*/)))
 
 FREERTOS	 = middlewares/FreeRTOS/Source
 HEAP		 = heap_4.c
@@ -30,6 +31,9 @@ SRC 		+= $(foreach l, $(LIBS), $(wildcard $(l)/src/*.c))
 CXXSRC 		+= $(foreach l, $(LIBS), $(wildcard $(l)/src/*.cpp))
 ASRC 		+= $(foreach l, $(LIBS), $(wildcard $(l)/src/*.s))
 
+#--Add DSP libs source files
+SRC             += $(foreach l, $(DSPLIBS), $(wildcard $(l)/*.c))
+
 #--Add middlewares source files--
 SRC 		+= $(foreach l, $(MIDDLEWARES), $(wildcard $(l)/src/*.c))
 ##--FreeRTOS--
@@ -43,6 +47,9 @@ RTOSFLAGS	+= -I$(FREERTOS)/portable/GCC/ARM_CM4F
 #--Specify objs and deps--
 OBJECTS		 = $(CXXSRC:%.cpp=$(out_dir)/%.o) $(ASRC:%.s=$(out_dir)/%.o) $(SRC:%.c=$(out_dir)/%.o)
 DEPS		 = $(OBJ:%.o=%.d)
+
+#--Add compiled libs--
+LIBSDEPS	 = $(wildcard $(cmsis_dir)/lib/*.a)
 
 #-/options/--------------------------------------------------------------------/
 
@@ -75,7 +82,7 @@ OOCD 		 = openocd
 LDSCRIPT	 = $(cmsis_dir)/loader/stm32_flash.ld
 OOCD_SCRIPT 	 = scripts/openocd/stm32f4discovery.cfg
 
-INCLUDE_FLAGS 	 = $(foreach l, $(LIBS), -I$(l)inc) -I$(inc_dir) $(RTOSFLAGS) $(foreach l, $(MIDDLEWARES), -I$(l)inc) 
+INCLUDE_FLAGS 	 = $(foreach l, $(LIBS), -I$(l)inc) -I$(inc_dir) $(RTOSFLAGS) $(foreach l, $(MIDDLEWARES), -I$(l)inc) -I$(cmsis_dir)/DSP/Include
 TARGET_FLAGS 	 = -mlittle-endian -mthumb -mcpu=cortex-m4 -mthumb-interwork \
 		   -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
@@ -96,7 +103,6 @@ else
 CXXFLAGS 	+= -O2 -s -DNDEBUG
 endif
 
-
 LDFLAGS 	 = $(TARGET_FLAGS)
 LDFLAGS 	+= -T$(LDSCRIPT)
 LDFLAGS		+= -specs=nosys.specs
@@ -105,10 +111,13 @@ ifeq ($(USE_NANO),y)
 LDFLAGS 	+= -specs=nano.specs
 endif
 
+LDFLAGS 	+= -L$(cmsis_dir)/lib
+
 ifeq ($(SEMIHOST),y)
 TARGET_FLAGS 	+= USE_SEMIHOST
 LDFLAGS 	+= -specs=rdimon.specs -lc -lrdimon
 endif
+LDFLAGS		+= -larm_cortexM4lf_math
 ifeq ($(VERBOSE),y)
 Q=
 else
@@ -143,7 +152,7 @@ $(out_dir)/%.o: %.s
 	@mkdir -p $(dir $@)
 	$(Q)$(CC) -MMD $(CFLAGS) -c -o $@ $<
 
-$(out_dir)/linker-params: $(OBJECTS) $(DEPS) makefile
+$(out_dir)/linker-params: $(OBJECTS) $(LIBSDEPS) makefile
 	@echo LD params
 	@mkdir -p $(dir $@)
 	$(Q)echo "-Wl,-( $(OBJECTS) -Wl,-) $(LDFLAGS)" > $@
