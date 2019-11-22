@@ -26,8 +26,9 @@ uint8_t	PWM_setDuty_milli(float duty);
 uint8_t motorTest(void);
 uint8_t bangBangControl(float desiredAngle);
 uint8_t caracterize(void);
-float 	feedbackLinearization(float);
+float 	feedbackLinearization(float angle, float u0, float mgoverK);
 uint8_t pidControl(float set_point);
+void linearTest(void);
 //uint8_t aero_motorTest(void); 
 /** @} */
 
@@ -50,12 +51,31 @@ class aeropendulum {
  */
 void aero_driving(void *pvParameters)
 {
-	pidControl(90);
-	while(1)
-	{
-	}
+	//pidControl(90);
+	//caracterize();
+	linearTest();
 }
 
+/**
+ * \brief Test the linearization
+ * \return Does not return
+ */
+void linearTest(void)
+{
+	aeropendulum aero;
+	aero.motorInit();
+	float angle;
+	float mgoverK = 0.21515971;
+	float u0 = 2.12842924;
+	float feedback = 0;
+
+	while(1)
+	{
+		angle = aero.getEncoderAngle();
+		feedback = feedbackLinearization(angle, u0, mgoverK);
+		PWM_setDuty_milli(feedback);
+	}
+}
 
 /**
   * @brief  Test the aeropendulum motor with pwm.
@@ -105,6 +125,12 @@ uint8_t bangBangControl(float desiredAngle)
 /*
  * \brief 	Function to carecterize the propellerPower and angle relation.
  * \return 	Does not return.
+ * \note 	To avoid the monotone work of printing at each step, break commands can be used in gdb, for example:
+ * 			b driving.cpp:148
+ * 			p encoderAngle
+ * 			p motorPower
+ * 			set motorPower += 0.001
+ * 			c
  */
 uint8_t caracterize(void)
 {
@@ -117,7 +143,7 @@ uint8_t caracterize(void)
 	while(1)
 	{
 		tmpEncoderAngle = aero.getEncoderAngle();
-		if((encoderAngle < 1.05*tmpEncoderAngle) && (encoderAngle > 0.95*tmpEncoderAngle))
+		if((encoderAngle < 1.005*tmpEncoderAngle) && (encoderAngle > 0.995*tmpEncoderAngle))
 		{
 			encoderAngle = 0;
 			PWM_setDuty_milli(motorPower);
@@ -137,10 +163,10 @@ uint8_t caracterize(void)
  * \param	angle	The encoderAngle in radians.
  * \retval 	Feedback linearization constant.
  */
-float feedbackLinearization(float angle)
+float feedbackLinearization(float angle, float u0, float mgoverK)
 {
-	float u0 = 2.116;
-	float mgoverK = AERO_MG_K;
+	//float u0 = 2.116;
+	//float mgoverK = AERO_MG_K;
 	float sinAngle = arm_sin_f32(angle);
 	return u0 + sinAngle*mgoverK;
 }
@@ -158,9 +184,9 @@ uint8_t pidControl(float set_point)
 	float pid_out;
 	float duty;
 	aero.motorInit();
-	pid.Kp = 0.0072;
-	pid.Ki = 0.008;
-	pid.Kd = 0.00432;
+	pid.Kp = 0.04;
+	pid.Ki = 0.0002;
+	pid.Kd = 0.01;
 	arm_pid_init_f32(&pid, set_point - aero.getEncoderAngle());
 
 	set_point = set_point*3.14159265/180;
@@ -169,7 +195,7 @@ uint8_t pidControl(float set_point)
 	{
 		encoderAngle = aero.getEncoderAngle();
 		pid_out = arm_pid_f32(&pid, set_point - encoderAngle);
-		feedbackTerm = feedbackLinearization(encoderAngle);
+		feedbackTerm = feedbackLinearization(encoderAngle, 0, 0);
 
 		duty = pid_out + feedbackTerm;
 
