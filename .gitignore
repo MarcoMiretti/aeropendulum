@@ -1,7 +1,7 @@
 # Build directories
 firmware/debug/
 firmware/release/
-
+firmware/logs/archive/
 # Raw docs directories
 docs/latex/
 docs/html/
