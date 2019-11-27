@@ -14,7 +14,7 @@
 
 
 #define DEGREES_PER_PULSE 	(float)(0.0625)
-#define AERO_BASE_ANGLE		(float)(22.855)
+#define AERO_BASE_ANGLE		(float)(20.625)
 #define AERO_MG_K 		(float)(0.227)
 
 #define PROP_MAX_POWER_MS	(float)(2.30) //TODO: define this values propperly
