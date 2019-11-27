@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy
 import math
 file = open("gdb.txt", "r") 
@@ -25,3 +26,5 @@ for line in file:
 
 res = numpy.polyfit(angleValues, pwmValues, 1)
 print res
+plt.plot(angleValues,pwmValues)
+plt.show()
