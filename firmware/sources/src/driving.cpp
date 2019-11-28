@@ -52,18 +52,6 @@ class aeropendulum {
 		uint8_t	set_motorPower(float);
 		
 		/**
-		 * \brief	Set PID Kd constant.
-		 * */
-		void	set_PID_Kd(float);
-		/**
-		 * \brief	Set PID Ki constant.
-		 * */
-		void	set_PID_Ki(float);
-		/**
-		 * \brief	Set PID Kp constant.
-		 * */
-		void	set_PID_Kp(float);
-		/**
 		 * \brief	Set propeller MK constant.
 		 * */
 		void	set_propellerConst_MK(float);
@@ -101,31 +89,61 @@ class aeropendulum {
 		 * \retval 	90 constant
 		 * */
 		float	get_over90_compensation_cohef(void);
-		/**
-		 * \brief	Get PID kd constant.
-		 * \retval 	kd constant
-		 * */
-		float 	get_PID_Kd(void);
-		/**
-		 * \brief	Get PID ki constant.
-		 * \retval 	ki constant
-		 * */
-		float 	get_PID_Ki(void);
-		/**
-		 * \brief	Get PID kp constant.
-		 * \retval 	kp constant
-		 * */
-		float 	get_PID_Kp(void);
 
 	private:
 		float	angle;
 		float	motorPower;
-		float	PID_Kd;
-		float	PID_Ki;
-		float	PID_Kp;
 		float	propellerConst_MK;
 		float	propellerConst_u0;
 		float	over90_compensation_cohef;
+};
+
+
+class pid_controller
+{
+	public:
+		/**
+		 * \brief	Set PID Kd constant.
+		 * */
+		void	set_Kd(float);
+		/**
+		 * \brief	Set PID Ki constant.
+		 * */
+		void	set_Ki(float);
+		/**
+		 * \brief	Set PID Kp constant.
+		 * */
+		void	set_Kp(float);
+		/**
+		 * \brief	Set PID Ts constant.
+		 * */
+		void	set_Ts(float);
+		
+		/**
+		 * \brief	Get PID kd constant.
+		 * \retval 	kd constant
+		 * */
+		float 	get_Kd(void);
+		/**
+		 * \brief	Get PID ki constant.
+		 * \retval 	ki constant
+		 * */
+		float 	get_Ki(void);
+		/**
+		 * \brief	Get PID kp constant.
+		 * \retval 	kp constant
+		 * */
+		float 	get_Kp(void);
+		/**
+		 * \brief	Get PID kp constant.
+		 * \retval 	Ts constant
+		 * */
+		float 	get_Ts(void);
+	private:
+		float	Kd;
+		float	Ki;
+		float	Kp;
+		float	Ts;
 };
 /**
   * @brief  Change pwm duty value.
@@ -181,7 +199,7 @@ void bangBangControl(aeropendulum& aero ,float set_point);
  * \param 	refresh_period = refresh period of the control loop
  * \return 	Does not return
  */
-void pidControl(aeropendulum& aero, float set_point, float refresh_period);
+void pidControl(aeropendulum& aero, pid_controller& pid, float set_point);
 /** @} */
 
 void impulse(aeropendulum& aero, float amplitude, float duration_ms);
@@ -194,6 +212,7 @@ void impulse(aeropendulum& aero, float amplitude, float duration_ms);
 void aero_driving(void *pvParameters)
 {
 	aeropendulum aero;
+	pid_controller pid;
 	/* aerodynamic constants */
 	float mk = 0.21970103*0.93;
 	float u0 = 2.12768394;
@@ -203,19 +222,20 @@ void aero_driving(void *pvParameters)
 	aero.set_over90_compensation_cohef(ninetyConst);
 
 	/* pid constants */
-	float refresh_period = 10;
+	float sampling_time = 10;//milliseconds
 	float Kp = 0.03;
 	float Ki = 0.0001;
 	float Kd = 0.003;
-	aero.set_PID_Kp(Kp);
-	aero.set_PID_Ki(Ki);
-	aero.set_PID_Kd(Kd);
+	pid.set_Kp(Kp);
+	pid.set_Ki(Ki);
+	pid.set_Kd(Kd);
+	pid.set_Ts(sampling_time);
 
 	/* set point */
 	float set_point = PI/2;
 
 	//impulse(aero, 2.21, refresh_period);
-	pidControl(aero, set_point, refresh_period);
+	pidControl(aero, pid, set_point);
 	//caracterize(aero);
 	//linearTest(aero);
 }
@@ -267,20 +287,6 @@ uint8_t aeropendulum::set_motorPower(float power)
 	return PWM_setDuty_milli(power);
 }
 
-void aeropendulum::set_PID_Kd(float Kd)
-{
-	aeropendulum::PID_Kd = Kd;
-}
-
-void aeropendulum::set_PID_Ki(float Ki)
-{
-	aeropendulum::PID_Ki = Ki;
-}
-
-void aeropendulum::set_PID_Kp(float Kp)
-{
-	aeropendulum::PID_Kp = Kp;
-}
 
 void aeropendulum::set_propellerConst_MK(float MK)
 {
@@ -310,21 +316,6 @@ float aeropendulum::get_angle()
 float aeropendulum::get_motorPower()
 {
 	return aeropendulum::motorPower;
-}
-
-float aeropendulum::get_PID_Kd()
-{
-	return aeropendulum::PID_Kd;
-}
-
-float aeropendulum::get_PID_Ki()
-{
-	return aeropendulum::PID_Ki;
-}
-
-float aeropendulum::get_PID_Kp()
-{
-	return aeropendulum::PID_Kp;
 }
 
 float aeropendulum::get_propellerConst_MK()
@@ -363,6 +354,60 @@ uint8_t PWM_setDuty_milli(float duty)
 }
 /** @} */
 
+/**
+ * \addtogroup pid_member_functions PID members
+ * @{
+ */
+/**
+ * \addtogroup pid_getters PID setters
+ * @{
+ */
+void pid_controller::set_Kd(float Kd)
+{
+	pid_controller::Kd = Kd;
+}
+
+void pid_controller::set_Ki(float Ki)
+{
+	pid_controller::Ki = Ki;
+}
+
+void pid_controller::set_Kp(float Kp)
+{
+	pid_controller::Kp = Kp;
+}
+
+void pid_controller::set_Ts(float Ts)
+{
+	pid_controller::Ts = Ts;
+}
+/** @} */
+
+/**
+ * \addtogroup pid_getters PID getters
+ * @{
+ */
+float pid_controller::get_Kd()
+{
+	return pid_controller::Kd;
+}
+
+float pid_controller::get_Ki()
+{
+	return pid_controller::Ki;
+}
+
+float pid_controller::get_Kp()
+{
+	return pid_controller::Kp;
+}
+
+float pid_controller::get_Ts()
+{
+	return pid_controller::Ts;
+}
+/** @} */
+/** @} */
 
 /**
  * \addtogroup linearization Linearization
@@ -439,7 +484,7 @@ void bangBangControl(aeropendulum& aero, float set_point)
 	}	
 }
 
-void pidControl(aeropendulum& aero , float set_point, float refresh_period)
+void pidControl(aeropendulum& aero ,pid_controller& piddy , float set_point)
 {
 	arm_pid_instance_f32 pid;
 	float feedbackTerm;
@@ -447,12 +492,11 @@ void pidControl(aeropendulum& aero , float set_point, float refresh_period)
 	float duty;
 
 	aero.motorInit();
-	pid.Kp = aero.get_PID_Kp();
-	pid.Ki = aero.get_PID_Ki();
-	pid.Kd = aero.get_PID_Kd();
+	pid.Kp = piddy.get_Kp();
+	pid.Ki = piddy.get_Ki();
+	pid.Kd = piddy.get_Kd();
 	
 	arm_pid_init_f32(&pid, 1);
-
 
 	while(1)
 	{
@@ -474,7 +518,7 @@ void pidControl(aeropendulum& aero , float set_point, float refresh_period)
 		}
 		
 		aero.set_motorPower(duty);
-		vTaskDelay(msToTick(refresh_period));
+		vTaskDelay(msToTick(piddy.get_Ts()));
 	}
 }
 /** @} */
