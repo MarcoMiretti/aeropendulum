@@ -71,6 +71,10 @@ class aeropendulum {
 		 * \brief	Set propeller u0 constant.
 		 * */
 		void	set_propellerConst_u0(float);
+		/**
+		 * \brief	Set 90 constant.
+		 * */
+		void	set_over90_compensation_cohef(float);
 
 		/**
 		 * \brief	Get propeller power (ms).
@@ -92,6 +96,11 @@ class aeropendulum {
 		 * \retval 	u0 constant
 		 * */
 		float	get_propellerConst_u0(void);
+		/**
+		 * \brief	Get 90 constant.
+		 * \retval 	90 constant
+		 * */
+		float	get_over90_compensation_cohef(void);
 		/**
 		 * \brief	Get PID kd constant.
 		 * \retval 	kd constant
@@ -116,6 +125,7 @@ class aeropendulum {
 		float	PID_Kp;
 		float	propellerConst_MK;
 		float	propellerConst_u0;
+		float	over90_compensation_cohef;
 };
 /**
   * @brief  Change pwm duty value.
@@ -149,7 +159,7 @@ void 	linearTest(aeropendulum& aero);
  * 			set logging on
  * 			c
  */
-uint8_t caracterize(void);
+uint8_t caracterize(aeropendulum& aero);
 /**
  * \brief 	Feedback Linearization
  * \note 	Given that the system is nonlinear, to avoid the usual linearization between points, we can apply a feedback linearization to cancel the nonlinear term that is to add u0+m*g*sin(angle)/k to the manipulated. The values mg/k were infered with steady state tests.
@@ -174,6 +184,8 @@ void bangBangControl(aeropendulum& aero ,float set_point);
 void pidControl(aeropendulum& aero, float set_point, float refresh_period);
 /** @} */
 
+void impulse(aeropendulum& aero, float amplitude, float duration_ms);
+
 
 /**
  * \brief 	Aeropendulum driving task.
@@ -183,27 +195,41 @@ void aero_driving(void *pvParameters)
 {
 	aeropendulum aero;
 	/* aerodynamic constants */
-	float mk = 0.2238146*0.92;
-	float u0 = 2.12916976;
+	float mk = 0.21970103*0.93;
+	float u0 = 2.12768394;
+	float ninetyConst = 0.08;
 	aero.set_propellerConst_MK(mk);
 	aero.set_propellerConst_u0(u0);
+	aero.set_over90_compensation_cohef(ninetyConst);
 
 	/* pid constants */
 	float refresh_period = 10;
-	float Kp = 0.05;
-	float Ki = 0.00001;
-	float Kd = 0.1;
+	float Kp = 0.03;
+	float Ki = 0.0001;
+	float Kd = 0.003;
 	aero.set_PID_Kp(Kp);
 	aero.set_PID_Ki(Ki);
 	aero.set_PID_Kd(Kd);
 
 	/* set point */
 	float set_point = PI/2;
+
+	//impulse(aero, 2.21, refresh_period);
 	pidControl(aero, set_point, refresh_period);
-	//caracterize();
-	//linearTest();
+	//caracterize(aero);
+	//linearTest(aero);
 }
 
+void impulse(aeropendulum& aero, float amplitude, float duration_ms)
+{
+	aero.motorInit();
+	vTaskDelay(msToTick(duration_ms));
+	aero.motorOff();
+	while(1)
+	{
+	
+	}
+}
 
 /**
  * \addtogroup aero_member_functions Aero members
@@ -212,7 +238,7 @@ void aero_driving(void *pvParameters)
 uint8_t aeropendulum::motorInit(void)
 {
 	PWM_setDuty_milli(PROP_POWERON_MS);
-	vTaskDelay(1000/portTICK_PERIOD_MS);		
+	vTaskDelay(msToTick(1000));
 	return PWM_setDuty_milli(2.2);
 }
 
@@ -265,6 +291,11 @@ void aeropendulum::set_propellerConst_u0(float u0)
 {
 	aeropendulum::propellerConst_u0 = u0;
 }
+
+void aeropendulum::set_over90_compensation_cohef(float ninetyConst)
+{
+	aeropendulum::over90_compensation_cohef = ninetyConst;
+}
 /** @} */
 
 /**
@@ -305,6 +336,12 @@ float aeropendulum::get_propellerConst_u0()
 {
 	return aeropendulum::propellerConst_u0;
 }
+
+float aeropendulum::get_over90_compensation_cohef()
+{
+	return aeropendulum::over90_compensation_cohef;
+}
+
 /** @} */ //Getters
 /** @} */ //Aero members
 
@@ -334,11 +371,11 @@ uint8_t PWM_setDuty_milli(float duty)
 void linearTest(aeropendulum& aero)
 {
 	aero.motorInit();
-	float feedback = 0;
 	while(1)
 	{
-		feedback = feedbackLinearization(aero);
-		PWM_setDuty_milli(feedback);
+		aero.updateAngle();
+		aero.set_motorPower(feedbackLinearization(aero));
+		vTaskDelay(msToTick(10));
 	}
 }
 
@@ -363,7 +400,7 @@ uint8_t caracterize(aeropendulum& aero)
 		else
 		{
 		encoderAngle = tmpEncoderAngle;
-		vTaskDelay(msToTick(5000));
+		vTaskDelay(msToTick(1000));
 		}
 	}
 	return 0;
@@ -374,7 +411,8 @@ float feedbackLinearization(aeropendulum& aero)
 	float MK = aero.get_propellerConst_MK();
 	float u0 = aero.get_propellerConst_u0();
 	float sinAngle = arm_sin_f32(aero.get_angle());
-	return u0 + sinAngle*MK;
+	if(aero.get_angle() < PI/2) return u0 + sinAngle*MK;
+	else return u0 + sinAngle*MK - (aero.get_angle()-(PI/2))*aero.get_over90_compensation_cohef();
 }
 /** @} */
 
