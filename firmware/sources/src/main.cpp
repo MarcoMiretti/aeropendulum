@@ -35,7 +35,7 @@ int main(void)
 	TIM3_Init();
 	TIM4_Init();
 	PWM_Init();
-	xTaskCreate( aero_driving, "Aero Driving", 256, NULL, 1, NULL);
+	xTaskCreate( aero_driving, "Aero Driving", 512, NULL, 1, NULL);
 	
 	vTaskStartScheduler();
 	return 0;

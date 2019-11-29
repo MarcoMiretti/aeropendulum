@@ -382,7 +382,7 @@ void aero_driving(void *pvParameters)
 	
 	float Kp_c = 0.045;
 	float Ki_c = 0.00002;
-	float Kd_c = 0.000005;
+	float Kd_c = 0.05;
 
 	float Kp_r = 0.035;
 	float Ki_r = 0.000008;
@@ -390,7 +390,7 @@ void aero_driving(void *pvParameters)
 
 	float command_vs_reject_thres = 0.1745; //when is +- 10 grad from set point switch to reject mode
 
-	float sampling_time = 200;//milliseconds
+	float sampling_time = 20;//milliseconds
 	float derivative_filter_cutoff = 1000;
 	float wH = 2.35;
 	float wL = 2.1;
@@ -874,6 +874,7 @@ void pidControl(aeropendulum& aero ,pid_controller& pid , float set_point)
 
 	while(1)
 	{
+		uint32_t start = xTaskGetTickCount();
 		aero.updateAngle();
 		if(aero.get_angle()-pid.get_command_vs_reject_thres()>set_point || aero.get_angle()+pid.get_command_vs_reject_thres()<set_point)
 		{
@@ -908,7 +909,8 @@ void pidControl(aeropendulum& aero ,pid_controller& pid , float set_point)
 		duty = pid_out + feedbackTerm;
 
 		aero.set_motorPower(duty);
-		vTaskDelay(msToTick(pid.get_Ts()));
+		
+		vTaskDelay(msToTick(pid.get_Ts())-(xTaskGetTickCount()-start));
 	}
 }
 /** @} */
