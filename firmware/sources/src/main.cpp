@@ -14,6 +14,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "driving.h"
+#include "comms.h"
 /** @}*/
 
 /** \addtogroup defs Function definitions 
@@ -36,6 +37,7 @@ int main(void)
 	TIM4_Init();
 	PWM_Init();
 	xTaskCreate( aero_driving, "Aero Driving", 512, NULL, 1, NULL);
+	xTaskCreate( aero_comms, "Aero Comms", 512, NULL, 1, NULL);
 	
 	vTaskStartScheduler();
 	return 0;
@@ -47,6 +49,9 @@ int main(void)
   */
 uint8_t GPIO_Init(void)
 {
+	/* Enable UART5 clock */
+	RCC->APB1ENR = (1<<20);
+	
 	/* Clock for GPIOA,B,C,D */
 	RCC_GPIOPortSetClock(0,1);
 	RCC_GPIOPortSetClock(1,1);
@@ -98,7 +103,17 @@ uint8_t GPIO_Init(void)
 	GPIO_SetAlternateFunction(2,6,2);
 	/* PC7 mapped to AF2 (TIM3 CH2) */
 	GPIO_SetAlternateFunction(2,7,2);
-	
+
+	/* Set PC12 as alternate function */
+	GPIO_ModeSet(2,12,2);
+	/* Set PD2 as alternate function */
+	GPIO_ModeSet(3,2,2);
+
+	/* PC12 mapped to AF8 (UART5 TX) */
+	GPIO_SetAlternateFunction(2,12,8);
+	/* PD2 mapped to AF8 (UART5 RX) */
+	GPIO_SetAlternateFunction(3,2,8);
+
 	return 0;
 }
 
