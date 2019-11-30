@@ -20,6 +20,7 @@
 /** \addtogroup defs Function definitions 
  *  @{
  */
+uint8_t RCC_Init(void);
 uint8_t GPIO_Init(void);
 uint8_t TIM3_Init(void);
 uint8_t TIM4_Init(void);
@@ -32,6 +33,7 @@ uint8_t PWM_Init(void);
   */
 int main(void)
 {
+	RCC_Init();
 	GPIO_Init();
 	TIM3_Init();
 	TIM4_Init();
@@ -43,15 +45,28 @@ int main(void)
 	return 0;
 }
 
+uint8_t RCC_Init(void)
+{
+	/* Reset CR to default state */
+	RCC->CR 	&= ~(uint32_t)(0xFFFF00FF);
+	RCC->CR		|=  (uint32_t)(0x83);
+
+	/* Reset pll config to default state */
+	RCC->PLLCFGR	&= ~(uint32_t)(0x0FC3FFFF);
+	RCC->PLLCFGR	|=  (uint32_t)(0x04003010);
+
+	RCC->CFGR	= 0;
+
+	/* Enable UART5 clock */
+	RCC->APB1ENR 	 = (1<<20);
+}
+
 /**
   * @brief  Enables and sets peripherals.
   * @retval 0 if success.
   */
 uint8_t GPIO_Init(void)
 {
-	/* Enable UART5 clock */
-	RCC->APB1ENR = (1<<20);
-	
 	/* Clock for GPIOA,B,C,D */
 	RCC_GPIOPortSetClock(0,1);
 	RCC_GPIOPortSetClock(1,1);
@@ -111,6 +126,8 @@ uint8_t GPIO_Init(void)
 
 	/* PC12 mapped to AF8 (UART5 TX) */
 	GPIO_SetAlternateFunction(2,12,8);
+	/* Set PC12 to Pull-Up */
+	GPIO_SetPullUpPullDown(2,12,1);
 	/* PD2 mapped to AF8 (UART5 RX) */
 	GPIO_SetAlternateFunction(3,2,8);
 
