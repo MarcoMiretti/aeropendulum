@@ -289,7 +289,10 @@
 #ifndef _ARM_MATH_H
 #define _ARM_MATH_H
 
-/* Compiler specific diagnostic adjustment */
+#define ARM_MATH_CM4
+#define __FPU_PRESENT	1U
+
+   /* Compiler specific diagnostic adjustment */
 #if   defined ( __CC_ARM )
 
 #elif defined ( __ARMCC_VERSION ) && ( __ARMCC_VERSION >= 6010050 )
@@ -312,8 +315,6 @@
   #error Unknown compiler
 #endif
 
-#define ARM_MATH_CM4
-#define __FPU_PRESENT	1U
 
 #define __CMSIS_GENERIC         /* disable NVIC and Systick functions */
 

@@ -16,7 +16,10 @@ TARGET_BIN	 = $(build_dir)/$(PROJ_NAME).bin
 
 LIBS 		 = $(sort $(dir $(wildcard libs/*/)))
 MIDDLEWARES	 = $(sort $(dir $(wildcard middlewares/*/))) 
+
+ifeq ($(USE_DSP),y)
 DSPLIBS		 = $(sort $(dir $(wildcard $(cmsis_dir)/DSP/Source/*/)))
+endif
 
 FREERTOS	 = middlewares/FreeRTOS/Source
 HEAP		 = heap_4.c
@@ -32,7 +35,9 @@ CXXSRC 		+= $(foreach l, $(LIBS), $(wildcard $(l)/src/*.cpp))
 ASRC 		+= $(foreach l, $(LIBS), $(wildcard $(l)/src/*.s))
 
 #--Add DSP libs source files
+ifeq ($(USE_DSP),y)
 SRC             += $(foreach l, $(DSPLIBS), $(wildcard $(l)/*.c))
+endif
 
 #--Add middlewares source files--
 SRC 		+= $(foreach l, $(MIDDLEWARES), $(wildcard $(l)/src/*.c))
@@ -49,7 +54,9 @@ OBJECTS		 = $(CXXSRC:%.cpp=$(out_dir)/%.o) $(ASRC:%.s=$(out_dir)/%.o) $(SRC:%.c=
 DEPS		 = $(OBJ:%.o=%.d)
 
 #--Add compiled libs--
+ifeq ($(USE_DSP),y)
 LIBSDEPS	 = $(wildcard $(cmsis_dir)/lib/*.a)
+endif
 
 #-/options/--------------------------------------------------------------------/
 
@@ -82,7 +89,10 @@ OOCD 		 = openocd
 LDSCRIPT	 = $(cmsis_dir)/loader/stm32_flash.ld
 OOCD_SCRIPT 	 = scripts/openocd/stm32f4discovery.cfg
 
-INCLUDE_FLAGS 	 = $(foreach l, $(LIBS), -I$(l)inc) -I$(inc_dir) $(RTOSFLAGS) $(foreach l, $(MIDDLEWARES), -I$(l)inc) -I$(cmsis_dir)/DSP/Include
+INCLUDE_FLAGS 	 = $(foreach l, $(LIBS), -I$(l)inc) -I$(inc_dir) $(RTOSFLAGS) $(foreach l, $(MIDDLEWARES), -I$(l)inc) 
+ifeq ($(USE_DSP),y)
+INCLUDE_FLAGS	+= -I$(cmsis_dir)/DSP/Include
+endif
 TARGET_FLAGS 	 = -mlittle-endian -mthumb -mcpu=cortex-m4 -mthumb-interwork \
 		   -mfloat-abi=hard -mfpu=fpv4-sp-d16
 
@@ -117,7 +127,11 @@ ifeq ($(SEMIHOST),y)
 TARGET_FLAGS 	+= USE_SEMIHOST
 LDFLAGS 	+= -specs=rdimon.specs -lc -lrdimon
 endif
+
+ifeq ($(USE_DSP),y)
 LDFLAGS		+= -larm_cortexM4lf_math
+endif
+
 ifeq ($(VERBOSE),y)
 Q=
 else
