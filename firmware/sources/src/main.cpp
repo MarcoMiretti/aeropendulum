@@ -11,8 +11,6 @@
  *  @{
  */
 #include "main.h"
-#include "FreeRTOS.h"
-#include "task.h"
 #include "driving.h"
 #include "comms.h"
 /** @}*/
@@ -27,6 +25,17 @@ uint8_t TIM4_Init(void);
 uint8_t PWM_Init(void);
 /** @} */
 
+/** @addtogroup commBuffers Communication Buffers
+  * @{
+  */
+StreamBufferHandle_t bt_rx_streamBuffer = NULL;
+StreamBufferHandle_t bt_tx_streamBuffer = NULL;
+/**
+  * @}
+  */
+
+
+
 /**
   * @brief  Application entry point.
   * @retval 0 if success.
@@ -38,6 +47,10 @@ int main(void)
 	TIM3_Init();
 	TIM4_Init();
 	PWM_Init();
+
+	bt_rx_streamBuffer = xStreamBufferCreate(512, 3);
+	bt_tx_streamBuffer = xStreamBufferCreate(512, 3);
+	
 	xTaskCreate( aero_driving, "Aero Driving", 512, NULL, 1, NULL);
 	xTaskCreate( aero_comms, "Aero Comms", 512, NULL, 1, NULL);
 	
@@ -59,6 +72,7 @@ uint8_t RCC_Init(void)
 
 	/* Enable UART5 clock */
 	RCC->APB1ENR 	 = (1<<20);
+	return 0;
 }
 
 /**

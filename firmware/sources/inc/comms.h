@@ -12,12 +12,19 @@
 #ifndef __COMMS_H
 #define __COMMS_H
 
-
+#include "main.h"
 /**
  * \addtogroup task_defs Task definitions
  * @{
  */
 void aero_comms(void *pvParameters);
+#ifdef __cplusplus
+extern "C"{
+#endif
+void bt_read(void);
+#ifdef __cplusplus
+}
+#endif
 /** @} */
 
 #endif /* __COMMS_H */

@@ -17,6 +17,9 @@
 #endif
 
 #include "stm32f4xx_HAL.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "stream_buffer.h"
 
 /** @addtogroup GPIO_Constants GPIO Constants
   * @{
@@ -53,4 +56,5 @@
 /**
   * @}
   */
+
 #endif /* __MAIN_H */

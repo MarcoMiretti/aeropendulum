@@ -15,6 +15,7 @@
  *  @{
  */
 #include "stm32f4xx_HAL.h"
+#include "comms.h"
 /** @}*/
 
 #ifdef __cplusplus
@@ -26,6 +27,7 @@ extern "C" {
  * @{
  */
 uint8_t EXTI0_IRQHandler(void);
+uint8_t UART5_IRQHandler(void);
 /** @}*/
 
 #ifdef __cplusplus
