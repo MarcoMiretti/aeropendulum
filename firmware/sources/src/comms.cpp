@@ -14,6 +14,7 @@
 #include "task.h"
 #include "main.h"
 #include "comms.h"
+#include <math.h>
 /** @}*/
 
 /** \addtogroup defs 
@@ -67,10 +68,17 @@ uint16_t getVariable(uint8_t* rx_buffer, uint16_t len, uint8_t* variable);
  * \param len	= string lenght
  * \return 	float value
  * */
+float getFloatValueFromChar(uint8_t* rx_buffer, uint16_t len);
+/**
+ * \brief get the float value of buffer
+ * \note	this function converts a string to a float
+ * \param rx_buffer = rx_buffer pointer (only contains value in ascii)
+ * \param len	= string lenght
+ * \return 	float value
+ * */
 float getFloatValue(uint8_t* rx_buffer, uint16_t len);
 uint8_t bt_pVariable(uint8_t* variable, uint16_t len);
 uint8_t bt_sVariable(uint8_t* variable, uint16_t len, float value);
-
 /** @}*/
 
 /** @addtogroup extern_vars 
@@ -99,7 +107,7 @@ void aero_comms(void *pvParameters)
 		{
 			xStreamBufferReceive( bt_rx_streamBuffer, ( void * ) &( rx_buffer[ i ] ), sizeof( char ), 10 );
 			/* null character ends line */
-			if(rx_buffer[i] == 0)
+			if(rx_buffer[i]==0)
 			{
 				break;
 			}
@@ -209,6 +217,49 @@ uint16_t getVariable(uint8_t* rx_buffer, uint16_t len, uint8_t* variable)
 
 float getFloatValue(uint8_t* rx_buffer, uint16_t len)
 {
+	uint8_t i, comma_index;
+	/* search the  */
+	
+	for(i=0;i<len;i++)
+	{
+		if(rx_buffer[i]=='.')
+		{
+			comma_index = i;
+			break;
+		}
+	}
+
+	float value;
+	for(i=0;i<comma_index;i++)
+	{
+		value += pow(10,((comma_index-1)-i))*(rx_buffer[i]-48);
+	}
+	for(i=comma_index+1;i<len;i++)
+	{
+		value += pow(10,(-(i-(comma_index))))*(rx_buffer[i]-48);
+	}
+	return value;
+}
+
+
+
+
+float getFloatValueFromChars(uint8_t* rx_buffer, uint16_t len)
+{
+	uint8_t* first_address_pointer;
+	first_address_pointer = &rx_buffer[0];
+	uint8_t i;
+	for(i=0;i<4;i++)
+	{
+		/* if there is no more data */
+		if(i>=len)
+		{
+			*first_address_pointer = (uint8_t)0x00;
+		}
+		/* increment pointer address */
+		first_address_pointer++;
+	}
+
 	float* address_pointer =  (float*)rx_buffer;
 	float floatValue = *address_pointer;
 	return floatValue;
