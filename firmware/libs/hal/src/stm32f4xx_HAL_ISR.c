@@ -36,18 +36,6 @@ uint8_t EXTI0_IRQHandler(void)
 	}
 	return 0;
 }
-
-/**
- * \brief 	Handle UART5 interrupts	
- * \retval 	0 if success, -1 if error
- */ 
-uint8_t UART5_IRQHandler(void)
-{
-	/* new data in RX */
-	if(UART5->SR & USART_SR_RXNE)
-	{
-		bt_read();	
-	}
-	return 0;
-}
 /** @}*/
+
+

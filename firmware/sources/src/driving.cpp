@@ -15,8 +15,7 @@
 #include "task.h"
 #include "main.h"
 #include "driving.h"
-//#include "arm_math.h"
-#include "math.h"
+#include "arm_math.h"
 /** @}*/
 
 /** \addtogroup defs 
@@ -832,7 +831,7 @@ float feedbackLinearization(aeropendulum& aero)
 {
 	float MK = aero.get_propellerConst_MK();
 	float u0 = aero.get_propellerConst_u0();
-	float sinAngle = sin(aero.get_angle()); // arm_sin_f32(aero.get_angle());
+	float sinAngle = arm_sin_f32(aero.get_angle());
 	if(aero.get_angle() < PI/2) return u0 + sinAngle*MK;
 	else return u0 + sinAngle*MK - (aero.get_angle()-0.85*(PI/2))*aero.get_over90_compensation_cohef();
 }

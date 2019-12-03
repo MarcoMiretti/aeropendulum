@@ -12,9 +12,6 @@
 #ifndef __DRIVING_H
 #define __DRIVING_H
 
-#ifndef PI
-#define PI			(float)(3.1415926535)
-#endif /* PI */
 
 #define DEGREES_PER_PULSE 	(float)(0.0625)
 #define AERO_BASE_ANGLE		(float)(20.625)
