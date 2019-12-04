@@ -307,15 +307,15 @@ float getFloatValueFromChars(uint8_t* rx_buffer, uint16_t len)
 
 uint8_t getVariableInt(uint8_t* variable)
 {
-	if(variable == (uint8_t*)"onOff") return variables::onOff;
-	if(variable == (uint8_t*)"mode") return variables::mode;
-	if(variable == (uint8_t*)"angle") return variables::angle;
-	if(variable == (uint8_t*)"motorPower") return variables::motorPower;
-	if(variable == (uint8_t*)"linearization") return variables::linearization;
-	if(variable == (uint8_t*)"Kp") return variables::Kp;
-	if(variable == (uint8_t*)"Ki") return variables::Ki;
-	if(variable == (uint8_t*)"Kd") return variables::Kd;
-	if(variable == (uint8_t*)"Ts") return variables::Ts;
+	if(variable == (uint8_t*)"onOff") return onOff;
+	if(variable == (uint8_t*)"mode") return mode;
+	if(variable == (uint8_t*)"angle") return angle;
+	if(variable == (uint8_t*)"motorPower") return motorPower;
+	if(variable == (uint8_t*)"linearization") return linearization;
+	if(variable == (uint8_t*)"Kp") return Kp;
+	if(variable == (uint8_t*)"Ki") return Ki;
+	if(variable == (uint8_t*)"Kd") return Kd;
+	if(variable == (uint8_t*)"Ts") return Ts;
 	return -1;
 }
 
