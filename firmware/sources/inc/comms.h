@@ -18,13 +18,6 @@
  * @{
  */
 void aero_comms(void *pvParameters);
-#ifdef __cplusplus
-extern "C"{
-#endif
-void bt_read(void);
-#ifdef __cplusplus
-}
-#endif
 /** @} */
 
 #endif /* __COMMS_H */
