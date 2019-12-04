@@ -16,14 +16,17 @@
 #include "comms.h"
 #include <math.h>
 /** @}*/
-
+uint8_t dma_uart_buffer[32];
 /** \addtogroup defs 
  *  @{
  */
 void bt_putC(uint8_t ch);
 void bt_write(uint8_t* str, uint32_t len);
 void bt_UART5_conf(void);
-void separateSentence(uint8_t* rx_buffer, uint16_t len, uint8_t arg[5][10]);
+/**
+ * 	\brief DMA configuration for UART5
+ * */
+void DMA_config(void);
 /**
  * \brief	Decodes and executes the instruction in rx_buffer
  * \note	All the sub funtions modify rx_buffer, they cut the readed part, fox example if rx_buffer = s motorPower 2.23, the function that recognizes the command s returns rx_buffer = motorPower 2.23.
@@ -97,27 +100,31 @@ extern StreamBufferHandle_t bt_tx_streamBuffer;
 void aero_comms(void *pvParameters)
 {
 	bt_UART5_conf();
+	DMA_config();
 	uint8_t i;
-	uint8_t rx_buffer[255];
+	uint8_t rx_buffer[32];
 	while(1)
 	{
-		i = 0;
-		rx_buffer[0] = 0;
-		while(1)
+		if(DMA1->LISR & DMA_LISR_TCIF0)
 		{
-			xStreamBufferReceive( bt_rx_streamBuffer, ( void * ) &( rx_buffer[ i ] ), sizeof( char ), 10 );
-			/* null character ends line */
-			if(rx_buffer[i]==0)
+			for(i=0;i<32;i++)
 			{
-				break;
+				if(dma_uart_buffer[i]==0)
+				{
+					rx_buffer[i]=0;
+					break;
+				}
+				rx_buffer[i]=dma_uart_buffer[i];
 			}
-			i++;
-		}
-		if(rx_buffer[0] != 0)
-		{
-			decodeInstruction(rx_buffer, i);
-		}	
+			
+			/* clear flags */
+			DMA1->LIFCR = (11<<4);
 
+			/* reset counter and dma re-enable */
+			DMA1_Stream0->NDTR 	 =  (uint8_t)32;
+			DMA1_Stream0->CR 	|=  (uint32_t)(1<<0); /* enable dma1 */
+			decodeInstruction(rx_buffer, i);
+		}
 		vTaskDelay(msToTick(100));
 	}
 }
@@ -241,9 +248,6 @@ float getFloatValue(uint8_t* rx_buffer, uint16_t len)
 	return value;
 }
 
-
-
-
 float getFloatValueFromChars(uint8_t* rx_buffer, uint16_t len)
 {
 	uint8_t* first_address_pointer;
@@ -270,7 +274,6 @@ float getFloatValueFromChars(uint8_t* rx_buffer, uint16_t len)
  * */
 uint8_t bt_pVariable(uint8_t* variable, uint16_t len)
 {
-	bt_write(variable, len);
 	return 0;
 }
 /*
@@ -279,14 +282,15 @@ uint8_t bt_pVariable(uint8_t* variable, uint16_t len)
  * */
 uint8_t bt_sVariable(uint8_t* variable, uint16_t len, float value)
 {
-	bt_write(variable, len);
 	return 0;
 }
 
 void bt_putC(uint8_t ch)	
 {
+	UART5->CR1	|=  (uint32_t)(1<<3);
 	while(!(UART5->SR & USART_SR_TXE));
 	UART5->DR	 =  ch;
+	UART5->CR1	&= ~(uint32_t)(1<<3);
 }
 
 void bt_write(uint8_t* str, uint32_t len)
@@ -298,19 +302,26 @@ void bt_write(uint8_t* str, uint32_t len)
 	}
 }
 
-extern "C" void bt_read(void)
+void DMA_config()
 {
-	uint8_t ch[1];
-	ch[0] = UART5->DR;
-	xStreamBufferSendFromISR( bt_rx_streamBuffer, (uint8_t*) ch , 1, NULL );
+	/* Set peripheral address as UART->DR */
+	DMA1_Stream0->PAR 	 =  (uint32_t)0x40005004;
+	/* Set memory address as array buffer */
+	DMA1_Stream0->M0AR 	 =  (uint32_t)&dma_uart_buffer;
+	/* Number of data units to end transmission */
+	DMA1_Stream0->NDTR 	 =  (uint8_t)32;
+	/* Select DMA Stream 0 channel 4 */
+	DMA1_Stream0->CR 	|=  (uint32_t)(4<<25); /* channel 4 */
+	/* Configure memory to increment after each transfer */
+	DMA1_Stream0->CR 	|=  (uint32_t)(1<<10);
+	/* Configure the memory increment to be one byte */
+	DMA1_Stream0->CR 	&= ~(uint32_t)(11<<13);
+	/* Enable DMA1 Stream0 */
+	DMA1_Stream0->CR 	|=  (uint32_t)(1<<0);
 }
 
 void bt_UART5_conf(void)
 {
-	/* Configure interrupt for UART5 */
-	NVIC_SetPriority(UART5_IRQn, 1);
-	NVIC_EnableIRQ(UART5_IRQn);
-	
 	/* Enable usart */
 	UART5->CR1 	|=	 (uint32_t)(1<<13);
 	/* 8 data bits */
@@ -327,10 +338,12 @@ void bt_UART5_conf(void)
 	UART5->CR1	&=	~(uint32_t)(1<<15);
 	/* Half duplex mode not selected  */
 	UART5->CR3	&=	~(uint32_t)(1<<3);
-
-	
-	UART5->CR1	|=  (uint32_t)(1<<3);
-	UART5->CR1	|=  (uint32_t)(1<<2);
+	/* enable DMA */
+	UART5->CR3	|=	 (uint32_t)(1<<6);
+	/* clear transmission complete bit */
+	UART5->SR	&=	~(uint32_t)(1<<6);	
+	/* read enable */
+	UART5->CR1	|=  	 (uint32_t)(1<<2);
 	/*
 	 * Baud Rate = fck/[8*(2-OVER8)*USARTDIV]
 	 * 

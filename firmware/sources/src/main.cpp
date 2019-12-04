@@ -72,6 +72,8 @@ uint8_t RCC_Init(void)
 
 	/* Enable UART5 clock */
 	RCC->APB1ENR 	 = (1<<20);
+	/* Enable DMA1 clock */
+	RCC->AHB1ENR 		|=  (uint32_t)(1<<21);
 	return 0;
 }
 
