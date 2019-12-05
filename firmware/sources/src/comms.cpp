@@ -10,24 +10,10 @@
 /** \addtogroup deps
  *  @{
  */
-#include "FreeRTOS.h"
-#include "task.h"
 #include "main.h"
 #include "comms.h"
 #include <math.h>
 
-enum variables
-{
-	onOff,
-	mode,
-	angle,
-	motorPower,
-	linearization,
-	Kp,
-	Ki,
-	Kd,
-	Ts,
-};
 
 /** @}*/
 /** \addtogroup defs 
@@ -58,7 +44,7 @@ void DMA_config(void);
  * (0)	p -> prints variableName value
  * (1)	s -> sets variableName value
  **/
-void decodeInstruction(uint8_t *rx_buffer, uint16_t len);
+void decodeInstruction(uint8_t *rx_buffer, uint16_t len, void* pvParameters);
 /**
  * \brief detects which command was called
  * */
@@ -84,7 +70,7 @@ uint16_t getVariable(uint8_t* rx_buffer, uint16_t len, uint8_t* variable);
  * \param	variable = string that contains the variable name
  * \retval	Variable numeric equivalent
  */
-uint8_t getVariableInt(uint8_t* variable);
+uint8_t getVariableInt(uint8_t* variable, uint8_t len);
 /**
  * \brief get the float value of buffer
  * \note	this is a magic trick
@@ -107,8 +93,8 @@ float getFloatValueFromChar(uint8_t* rx_buffer, uint16_t len);
  * \return 	float value
  * */
 float getFloatValue(uint8_t* rx_buffer, uint16_t len);
-uint8_t bt_pVariable(uint8_t variable);
-uint8_t bt_sVariable(uint8_t variable, float value);
+uint8_t bt_pVariable(uint8_t instruction, uint8_t variable, void* pvParameters);
+uint8_t bt_sVariable(uint8_t instruction, uint8_t variable, float value, void* pvParameters);
 /** @}*/
 
 uint8_t dma_uart_rx_buffer[32];
@@ -117,8 +103,6 @@ uint8_t dma_uart_tx_buffer[8];
 /** @addtogroup extern_vars 
   * @{
   */
-extern StreamBufferHandle_t bt_rx_streamBuffer;
-extern StreamBufferHandle_t bt_tx_streamBuffer;
 /**
   * @}
   */
@@ -157,13 +141,13 @@ void aero_comms(void *pvParameters)
 			/* reset counter and dma re-enable */
 			DMA1_Stream0->NDTR 	 =  (uint8_t)32;
 			DMA1_Stream0->CR 	|=  (uint32_t)(1<<0); /* enable dma1 */
-			decodeInstruction(rx_buffer, i);
+			decodeInstruction(rx_buffer, i, pvParameters);
 		}
 		vTaskDelay(msToTick(100));
 	}
 }
 
-void decodeInstruction(uint8_t *rx_buffer, uint16_t len)
+void decodeInstruction(uint8_t *rx_buffer, uint16_t len, void* pvParameters)
 {
 	uint8_t command = -1;
 	uint8_t variable[20];
@@ -173,7 +157,6 @@ void decodeInstruction(uint8_t *rx_buffer, uint16_t len)
 	command = getCommand(rx_buffer, len);
 	eraseFirstXChars(rx_buffer, len, 2);
 	len -= 2;
-	variable_int = getVariableInt(variable);
 	if(command == 1)
 	{
 		variable_len = getVariable(rx_buffer, len, variable);
@@ -188,13 +171,14 @@ void decodeInstruction(uint8_t *rx_buffer, uint16_t len)
 		for(i=len;i<20;i++){variable[i] = 0;}
 		variable_len = len;
 	}
+	variable_int = getVariableInt(variable, variable_len);
 	switch(command)
 	{
 		case 0:
-			bt_pVariable(variable_int);
+			bt_pVariable(command, variable_int, pvParameters);
 			break;
 		case 1:
-			bt_sVariable(variable_int, value_float);
+			bt_sVariable(command, variable_int, value_float, pvParameters);
 			break;
 		default:
 			break;
@@ -305,25 +289,48 @@ float getFloatValueFromChars(uint8_t* rx_buffer, uint16_t len)
 	return floatValue;
 }
 
-uint8_t getVariableInt(uint8_t* variable)
+uint8_t stringCompare(uint8_t* str1, uint8_t* str2, uint8_t len1, uint8_t len2)
 {
-	if(variable == (uint8_t*)"onOff") return onOff;
-	if(variable == (uint8_t*)"mode") return mode;
-	if(variable == (uint8_t*)"angle") return angle;
-	if(variable == (uint8_t*)"motorPower") return motorPower;
-	if(variable == (uint8_t*)"linearization") return linearization;
-	if(variable == (uint8_t*)"Kp") return Kp;
-	if(variable == (uint8_t*)"Ki") return Ki;
-	if(variable == (uint8_t*)"Kd") return Kd;
-	if(variable == (uint8_t*)"Ts") return Ts;
+	uint8_t i;
+	if(len1+1 != len2) return 0;
+	for(i=0;i<len1;i++)
+	{
+		if(str1[i]!=str2[i]) return 0;
+	}
+	return 1;
+}
+
+uint8_t getVariableInt(uint8_t* variable, uint8_t len)
+{
+	if(stringCompare(variable, (uint8_t*)"onOff", len, sizeof("onOff"))) return onOff;
+	if(stringCompare(variable, (uint8_t*)"mode", len, sizeof("mode"))) return mode;
+	if(stringCompare(variable, (uint8_t*)"set_point", len, sizeof("set_point"))) return set_point;
+	if(stringCompare(variable, (uint8_t*)"angle", len, sizeof("angle"))) return angle;
+	if(stringCompare(variable, (uint8_t*)"motorPower", len, sizeof("motorPower"))) return motorPower;
+	if(stringCompare(variable, (uint8_t*)"u0", len, sizeof("u0"))) return u0;
+	if(stringCompare(variable, (uint8_t*)"mK", len, sizeof("mK"))) return mK;
+	if(stringCompare(variable, (uint8_t*)"Kp", len, sizeof("Kp"))) return Kp;
+	if(stringCompare(variable, (uint8_t*)"Ki", len, sizeof("Ki"))) return Ki;
+	if(stringCompare(variable, (uint8_t*)"Kd", len, sizeof("Kd"))) return Kd;
+	if(stringCompare(variable, (uint8_t*)"Ts", len, sizeof("Ts"))) return Ts;
+	uint8_t error[] = "unknown";
+	bt_write(error, sizeof(error));
 	return -1;
 }
 
 /*
  *
  * */
-uint8_t bt_pVariable(uint8_t variable)
+uint8_t bt_pVariable(uint8_t instruction, uint8_t variable, void* pvParameters)
 {
+	TickType_t wait_max_ms = msToTick(50);
+
+	struct command thisCommand;
+	thisCommand.instruction = instruction;
+	thisCommand.variable = variable;
+	thisCommand.value = 0;
+
+	xQueueSendToBack(*((QueueHandle_t*)pvParameters), (void*) &thisCommand, wait_max_ms);
 	return 0;
 }
 
@@ -331,9 +338,22 @@ uint8_t bt_pVariable(uint8_t variable)
  *
  *
  * */
-uint8_t bt_sVariable(uint8_t variable, float value)
+uint8_t bt_sVariable(uint8_t instruction, uint8_t variable, float value, void* pvParameters)
 {
+	TickType_t wait_max_ms = msToTick(50);
+	
+	struct command thisCommand;
+	thisCommand.instruction = instruction;
+	thisCommand.variable = variable;
+	thisCommand.value = value;
+
+	xQueueSendToBack(*((QueueHandle_t*)pvParameters), (void*) &thisCommand, wait_max_ms);
 	return 0;
+}
+
+void floatWrite(float value)
+{
+
 }
 
 uint8_t bt_write(uint8_t* str, uint32_t len)

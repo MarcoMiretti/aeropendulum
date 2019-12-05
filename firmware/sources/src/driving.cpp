@@ -11,11 +11,8 @@
 /** \addtogroup deps
  *  @{
  */
-#include "FreeRTOS.h"
-#include "task.h"
 #include "main.h"
 #include "driving.h"
-//#include "arm_math.h"
 #include "math.h"
 /** @}*/
 
@@ -53,6 +50,14 @@ class aeropendulum {
 		uint8_t	set_motorPower(float);
 		
 		/**
+		 * \brief	Set onOff status.
+		 * */
+		void set_onOff(uint8_t);
+		/**
+		 * \brief	Set operation mode.
+		 * */
+		void set_mode(uint8_t);
+		/**
 		 * \brief	Set propeller MK constant.
 		 * */
 		void	set_propellerConst_MK(float);
@@ -64,7 +69,21 @@ class aeropendulum {
 		 * \brief	Set 90 constant.
 		 * */
 		void	set_over90_compensation_cohef(float);
+		/**
+		 * \brief	Set setPoint.
+		 * */
+		void	set_setPoint(float);
 
+		/**
+		 * \brief	Get onOff status.
+		 * \retval 	onOff status
+		 * */
+		uint8_t 	get_onOff(void);
+		/**
+		 * \brief	Get operation mode.
+		 * \retval 	operation mode
+		 * */
+		uint8_t 	get_mode(void);
 		/**
 		 * \brief	Get propeller power (ms).
 		 * \retval 	power in ms
@@ -92,6 +111,9 @@ class aeropendulum {
 		float	get_over90_compensation_cohef(void);
 
 	private:
+		uint8_t onOff;
+		uint8_t mode;
+		float	setPoint;
 		float	angle;
 		float	motorPower;
 		float	propellerConst_MK;
@@ -265,6 +287,7 @@ class pid_controller
 		 * */
 		float 	get_command_vs_reject_thres(void);
 	private:
+
 		float	Kd;
 		float	Ki;
 		float	Kp;
@@ -276,7 +299,8 @@ class pid_controller
 		float	Kd_r;
 		float	Ki_r;
 		float	Kp_r;
-		
+	
+
 		float	command_vs_reject_thres;
 
 		float	Ts;	/**< Sampling time */
@@ -348,17 +372,26 @@ float 	feedbackLinearization(aeropendulum& aero);
   */
 void bangBangControl(aeropendulum& aero ,float set_point);
 /**
- * \brief 	PID control loop
+ * \brief 	PID control update
  * \param	aero = aeropendulum instance
  * \param	set_point = desired setpoint in radians
  * \param 	refresh_period = refresh period of the control loop
- * \return 	Does not return
+ * \return 	
  */
 void pidControl(aeropendulum& aero, pid_controller& pid, float set_point);
+/**
+ * \brief 	PID control initialization 
+ * \param	aero = aeropendulum instance
+ * \param	set_point = desired setpoint in radians
+ * \param 	refresh_period = refresh period of the control loop
+ * \return 	
+ */
+void pidControlInit(aeropendulum& aero, pid_controller& pid, float set_point);
 /** @} */
 
 void impulse(aeropendulum& aero, float amplitude, float duration_ms);
 
+void handleRequest(aeropendulum& aero, pid_controller& pid, struct command receivedCommand);
 
 /**
  * \brief 	Aeropendulum driving task.
@@ -375,6 +408,7 @@ void aero_driving(void *pvParameters)
 	aero.set_propellerConst_MK(mk);
 	aero.set_propellerConst_u0(u0);
 	aero.set_over90_compensation_cohef(ninetyConst);
+
 
 	/* pid constants */
 	//float Kp = 0.04;
@@ -411,13 +445,126 @@ void aero_driving(void *pvParameters)
 
 	/* set point */
 	float set_point = PI/2;
-
-	//impulse(aero, 2.21, refresh_period);
-	pidControl(aero, pid, set_point);
-	//caracterize(aero);
-	//linearTest(aero);
+	aero.set_setPoint(set_point);
+	while(1)
+	{	
+		/* starts motors and sets default values */
+		pidControlInit(aero, pid, set_point);
+		while(1)
+		{
+			struct command receivedCommand;
+			receivedCommand.instruction = 0xFF;
+			while(uxQueueMessagesWaiting(*((QueueHandle_t*)pvParameters)))
+			{
+				xQueueReceive(*((QueueHandle_t*)pvParameters), &(receivedCommand), (TickType_t)0);
+			}
+			if(receivedCommand.instruction != 0xFF)
+			{
+				handleRequest(aero, pid, receivedCommand);
+			}
+			uint32_t start = xTaskGetTickCount();
+			//impulse(aero, 2.21, refresh_period);
+			pidControl(aero, pid, set_point);
+			//caracterize(aero);
+			//linearTest(aero);
+			vTaskDelay(msToTick(pid.get_Ts())-(xTaskGetTickCount()-start));
+		}
+	}
 }
-
+/*
+ *
+	onOff,
+	mode,
+	angle,
+	motorPower,
+	linearization,
+	Kp,
+	Ki,
+	Kd,
+	Ts,
+ *
+ * */
+void handleRequest(aeropendulum& aero, pid_controller& pid, struct command receivedCommand)
+{
+	float value;
+	switch(receivedCommand.instruction)
+	{
+	case print:
+		switch(receivedCommand.variable)
+		{
+			case onOff:
+				value = aero.get_onOff();
+				break;
+			case mode:
+				value = aero.get_mode();	
+				break;
+			case angle:
+				aero.updateAngle();
+				value = aero.get_angle();
+				break;
+			case motorPower:
+				value = aero.get_motorPower();
+				break;
+			case u0:
+				value = aero.get_propellerConst_u0();
+				break;
+			case mK:
+				value = aero.get_propellerConst_MK();
+				break;
+			case Kp:
+				value = pid.get_Kp();
+				break;
+			case Ki:
+				value = pid.get_Ki();
+				break;
+			case Kd:
+				value = pid.get_Kd();
+				break;
+			case Ts:	
+				value = pid.get_Ts();
+				break;
+		}
+		/* write the selected value to UART */
+		floatWrite(value);
+		break;
+	case set:
+		switch(receivedCommand.variable)
+		{
+			value = receivedCommand.value;
+			case onOff:
+				aero.set_onOff((uint8_t)value);
+				break;
+			case mode:	
+				aero.set_mode((uint8_t)value);
+				break;
+			case set_point:
+				aero.set_setPoint(value);
+				break;
+			case motorPower:
+				aero.set_motorPower(value);
+				break;
+			case u0:
+				aero.set_propellerConst_u0(value);
+				break;
+			case mK:
+				aero.set_propellerConst_MK(value);
+				break;
+			case Kp:
+				pid.set_Kp(value);
+				break;
+			case Ki:
+				pid.set_Ki(value);
+				break;
+			case Kd:
+				pid.set_Kd(value);
+				break;
+			case Ts:	
+				pid.set_Ts(value);
+				break;
+		}
+		break;
+	}
+}
 void impulse(aeropendulum& aero, float amplitude, float duration_ms)
 {
 	aero.motorInit();
@@ -465,6 +612,15 @@ uint8_t aeropendulum::set_motorPower(float power)
 	return PWM_setDuty_milli(power);
 }
 
+void aeropendulum::set_onOff(uint8_t onOff)
+{
+	aeropendulum::onOff = onOff;
+}
+
+void aeropendulum::set_mode(uint8_t mode)
+{
+	aeropendulum::mode = mode;
+}
 
 void aeropendulum::set_propellerConst_MK(float MK)
 {
@@ -480,12 +636,28 @@ void aeropendulum::set_over90_compensation_cohef(float ninetyConst)
 {
 	aeropendulum::over90_compensation_cohef = ninetyConst;
 }
+
+void aeropendulum::set_setPoint(float setPoint)
+{
+	aeropendulum::setPoint = setPoint;
+}
+
 /** @} */
 
 /**
  * \addtogroup aero_getters Aero getters
  * @{
  */
+uint8_t aeropendulum::get_onOff()
+{
+	return aeropendulum::onOff;
+}
+
+uint8_t aeropendulum::get_mode()
+{
+	return aeropendulum::mode;
+}
+
 float aeropendulum::get_angle()
 {
 	return aeropendulum::angle;
@@ -861,57 +1033,50 @@ void bangBangControl(aeropendulum& aero, float set_point)
 	}	
 }
 
+void pidControlInit(aeropendulum& aero ,pid_controller& pid , float set_point)
+{
+	aero.motorInit();
+	pid.init();
+}
+
+
 void pidControl(aeropendulum& aero ,pid_controller& pid , float set_point)
 {
-	//arm_pid_instance_f32 pid;
 	float feedbackTerm;
 	float pid_out;
 	float duty;
-	uint8_t is_command_mode;
-	uint8_t is_reject_mode;
-	aero.motorInit();
-
-	pid.init();
-
-	while(1)
+	aero.updateAngle();
+	/*
+	if(aero.get_angle()-pid.get_command_vs_reject_thres()>set_point || aero.get_angle()+pid.get_command_vs_reject_thres()<set_point)
 	{
-		uint32_t start = xTaskGetTickCount();
-		aero.updateAngle();
-		if(aero.get_angle()-pid.get_command_vs_reject_thres()>set_point || aero.get_angle()+pid.get_command_vs_reject_thres()<set_point)
+		if(!is_command_mode)
 		{
-			if(!is_command_mode)
-			{
-				pid.set_Kp(pid.get_Kp_c());	
-				pid.set_Ki(pid.get_Ki_c());	
-				pid.set_Kd(pid.get_Kd_c());
-				pid.update_parameters();	
-				is_command_mode = 1;
-			}
+			pid.set_Kp(pid.get_Kp_c());	
+			pid.set_Ki(pid.get_Ki_c());	
+			pid.set_Kd(pid.get_Kd_c());
+			pid.update_parameters();	
+			is_command_mode = 1;
 		}
-		else
-		{
-			if(is_command_mode)
-			{
-				pid.set_Kp(pid.get_Kp_r());	
-				pid.set_Ki(pid.get_Ki_r());	
-				pid.set_Kd(pid.get_Kd_r());
-				pid.update_parameters();	
-				is_command_mode = 0;
-			}
-		}
-
-		//pid_out = arm_pid_f32(&pid, set_point - aero.get_angle());
-		feedbackTerm = feedbackLinearization(aero);
-		pid.set_feedback_linearization(feedbackTerm);
-
-		pid_out = pid.update_manipulated(set_point - aero.get_angle());
-		
-
-		duty = pid_out + feedbackTerm;
-
-		aero.set_motorPower(duty);
-		
-		vTaskDelay(msToTick(pid.get_Ts())-(xTaskGetTickCount()-start));
 	}
+	else
+	{
+		if(is_command_mode)
+		{
+			pid.set_Kp(pid.get_Kp_r());	
+			pid.set_Ki(pid.get_Ki_r());	
+			pid.set_Kd(pid.get_Kd_r());
+			pid.update_parameters();	
+			is_command_mode = 0;
+		}
+	}
+	*/
+	feedbackTerm = feedbackLinearization(aero);
+	pid.set_feedback_linearization(feedbackTerm);
+
+	pid_out = pid.update_manipulated(set_point - aero.get_angle());
+
+	duty = pid_out + feedbackTerm;
+
+	aero.set_motorPower(duty);
 }
 /** @} */

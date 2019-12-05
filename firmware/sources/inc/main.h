@@ -18,6 +18,7 @@
 
 #include "stm32f4xx_HAL.h"
 #include "FreeRTOS.h"
+#include "queue.h"
 #include "task.h"
 #include "stream_buffer.h"
 
@@ -56,5 +57,34 @@
 /**
   * @}
   */
+enum variables
+{
+	onOff,
+	mode,
+	set_point,
+	angle,
+	motorPower,
+	u0,
+	mK,
+	Kp,
+	Ki,
+	Kd,
+	Ts,
+};
+
+enum instructions
+{
+	print,
+	set,
+};
+
+struct command
+{
+	uint8_t instruction;
+	uint8_t variable;
+	float value;
+};
+
+void floatWrite(float value);
 
 #endif /* __MAIN_H */

@@ -25,16 +25,13 @@ uint8_t TIM4_Init(void);
 uint8_t PWM_Init(void);
 /** @} */
 
-/** @addtogroup commBuffers Communication Buffers
+/** @addtogroup queues
   * @{
   */
-StreamBufferHandle_t bt_rx_streamBuffer = NULL;
-StreamBufferHandle_t bt_tx_streamBuffer = NULL;
+QueueHandle_t xDrivingQ;/* for driving to read */
 /**
   * @}
   */
-
-
 
 /**
   * @brief  Application entry point.
@@ -48,11 +45,10 @@ int main(void)
 	TIM4_Init();
 	PWM_Init();
 
-	bt_rx_streamBuffer = xStreamBufferCreate(512, 3);
-	bt_tx_streamBuffer = xStreamBufferCreate(512, 3);
-	
-	xTaskCreate( aero_driving, "Aero Driving", 512, NULL, 1, NULL);
-	xTaskCreate( aero_comms, "Aero Comms", 512, NULL, 1, NULL);
+	xDrivingQ = xQueueCreate( 1 , ( UBaseType_t ) sizeof( struct command ) );
+
+	xTaskCreate( aero_driving, "Aero Driving", 512, ( void * ) &xDrivingQ, 1, NULL);
+	xTaskCreate( aero_comms, "Aero Comms", 512, &xDrivingQ, 1, NULL);
 	
 	vTaskStartScheduler();
 	return 0;
