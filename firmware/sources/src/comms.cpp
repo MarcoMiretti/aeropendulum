@@ -244,9 +244,21 @@ uint16_t getVariable(uint8_t* rx_buffer, uint16_t len, uint8_t* variable)
 
 float getFloatValue(uint8_t* rx_buffer, uint16_t len)
 {
-	uint8_t i, comma_index;
+	uint8_t i, comma_index, is_negative = 0;
 	/* search the  */
-	
+
+	/* detect sign */
+	if(rx_buffer[0] == '-')
+	{
+		is_negative = 1;
+		for(i=0;i<len-1;i++)
+		{
+			rx_buffer[i] = rx_buffer[i+1];
+		}
+		len--;
+	}
+		
+	/* where is the decimal point */
 	for(i=0;i<len;i++)
 	{
 		if(rx_buffer[i]=='.')
@@ -256,6 +268,7 @@ float getFloatValue(uint8_t* rx_buffer, uint16_t len)
 		}
 	}
 
+	/* calculate float */
 	float value;
 	for(i=0;i<comma_index;i++)
 	{
@@ -264,6 +277,11 @@ float getFloatValue(uint8_t* rx_buffer, uint16_t len)
 	for(i=comma_index+1;i<len;i++)
 	{
 		value += pow(10,(-(i-(comma_index))))*(rx_buffer[i]-48);
+	}
+
+	if(is_negative)
+	{
+		value *= -1;
 	}
 	return value;
 }
@@ -353,7 +371,89 @@ uint8_t bt_sVariable(uint8_t instruction, uint8_t variable, float value, void* p
 
 void floatWrite(float value)
 {
+	uint8_t i;
+	uint8_t fp_offset;
+	uint8_t is_negative = 0;
+	float tmp;
+	uint8_t cn_exp;
+	uint8_t value_str[8] = {0,0,0,0,0,0,0,0};
+	
+	/* detect sign */
+	if(value<0)
+	{
+		value *= -1;
+		is_negative = 1;
+	}
 
+	/* detect zero */
+	if(value == 0)
+	{
+		value_str[0]='0';
+	}
+
+
+	else
+	{
+		/* see if value is in avaliable range */
+		if(value>9999999 || value<0.00001)
+		{
+			uint8_t error[] = "out_ran";
+			for(i=0;i<8;i++) value_str[i] = error[i];
+		}
+		else
+		{
+			/* see where decimal point is */
+			cn_exp = 0;
+			for(i=0;i<7;i++)
+			{
+				tmp = value/pow(10,i);
+				if(tmp>=1 && tmp<10)
+				{
+					cn_exp = i;
+					break;
+				}
+			
+			}
+			tmp = value;
+			fp_offset = 0;
+			/* write in some kind of scientific notation */
+			tmp = tmp*pow(10,-cn_exp);
+
+			/* write the value */
+			for(i=0;i<7;i++)
+			{
+				value_str[i+fp_offset] = (int)tmp;
+				tmp -= (int)tmp;
+				tmp = tmp*10;
+				if(i == cn_exp)
+				{
+					fp_offset = 1;
+					value_str[i+fp_offset] = '.'-48;
+				}
+			}
+			/* transform to ascii */
+			for(i=0;i<7;i++)
+			{
+				value_str[i] += 48;
+			}
+		}
+	}
+	/* apply sign */
+	if(is_negative)
+	{
+		for(i=6;i>0;i--)
+		{
+			value_str[i]=value_str[i-1];
+		}
+		value_str[0] = '-';
+	}
+	else
+	{
+		value_str[7] = '0';
+	}
+
+	/* write value */
+	bt_write(value_str,sizeof(value_str));
 }
 
 uint8_t bt_write(uint8_t* str, uint32_t len)

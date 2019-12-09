@@ -85,6 +85,10 @@ struct command
 	float value;
 };
 
+/**
+ * \brief Converts float to ascii string and writes it \TODO: separate in two functions
+ * \param value = float to convert
+ **/
 void floatWrite(float value);
 
 #endif /* __MAIN_H */

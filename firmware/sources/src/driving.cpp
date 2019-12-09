@@ -528,9 +528,9 @@ void handleRequest(aeropendulum& aero, pid_controller& pid, struct command recei
 		floatWrite(value);
 		break;
 	case set:
+		value = receivedCommand.value;
 		switch(receivedCommand.variable)
 		{
-			value = receivedCommand.value;
 			case onOff:
 				aero.set_onOff((uint8_t)value);
 				break;
