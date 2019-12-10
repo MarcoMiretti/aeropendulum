@@ -78,6 +78,12 @@ enum instructions
 	set,
 };
 
+enum modes
+{
+	mode_pcOperation,
+	mode_pidControl,
+};
+
 struct command
 {
 	uint8_t instruction;

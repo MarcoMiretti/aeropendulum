@@ -393,6 +393,7 @@ void impulse(aeropendulum& aero, float amplitude, float duration_ms);
 
 void handleRequest(aeropendulum& aero, pid_controller& pid, struct command receivedCommand);
 
+void commsHandler(void *pvParameters, aeropendulum& aero, pid_controller& pid);
 /**
  * \brief 	Aeropendulum driving task.
  * \note 	The goal of this task is to update the position, calculate the propeller input voltage and drive the motor.
@@ -418,12 +419,12 @@ void aero_driving(void *pvParameters)
 	float Kp_c = 0.045;
 	float Ki_c = 0.00002;
 	float Kd_c = 0.05;
-
+/*
 	float Kp_r = 0.035;
 	float Ki_r = 0.000008;
 	float Kd_r = 0.000001;
-
-	float command_vs_reject_thres = 0.1745; //when is +- 10 grad from set point switch to reject mode
+*/
+	//float command_vs_reject_thres = 0.1745; //when is +- 10 grad from set point switch to reject mode
 
 	float sampling_time = 20;//milliseconds
 	float derivative_filter_cutoff = 1000;
@@ -442,48 +443,60 @@ void aero_driving(void *pvParameters)
 	pid.set_N(derivative_filter_cutoff);
 	pid.set_wH(wH);
 	pid.set_wL(wL);
-
+	aero.set_mode(0);
+	aero.set_onOff(0);
 	/* set point */
 	float set_point = PI/2;
 	aero.set_setPoint(set_point);
 	while(1)
 	{	
-		/* starts motors and sets default values */
-		pidControlInit(aero, pid, set_point);
-		while(1)
+		/* detect operation modes */
+		commsHandler(pvParameters, aero, pid);
+		switch((uint32_t)aero.get_mode())
 		{
-			struct command receivedCommand;
-			receivedCommand.instruction = 0xFF;
-			while(uxQueueMessagesWaiting(*((QueueHandle_t*)pvParameters)))
-			{
-				xQueueReceive(*((QueueHandle_t*)pvParameters), &(receivedCommand), (TickType_t)0);
-			}
-			if(receivedCommand.instruction != 0xFF)
-			{
-				handleRequest(aero, pid, receivedCommand);
-			}
-			uint32_t start = xTaskGetTickCount();
-			//impulse(aero, 2.21, refresh_period);
-			pidControl(aero, pid, set_point);
-			//caracterize(aero);
-			//linearTest(aero);
-			vTaskDelay(msToTick(pid.get_Ts())-(xTaskGetTickCount()-start));
+			case mode_pcOperation:
+				/*-- PC operation mode --*/
+				/* the aeropendulum is operated only by pc set/get commands */
+				aero.motorInit();
+				while((uint32_t)aero.get_onOff())
+				{
+					commsHandler(pvParameters, aero, pid);
+					uint32_t start = xTaskGetTickCount();
+				
+					vTaskDelay(msToTick(pid.get_Ts())-(xTaskGetTickCount()-start));
+				}
+				break;
+			case mode_pidControl:
+				/*-- PID CONTROL --*/
+				/* starts motors and sets default values */
+				pidControlInit(aero, pid, set_point);
+				while((uint32_t)aero.get_onOff())
+				{
+					commsHandler(*((QueueHandle_t*)pvParameters), aero, pid);
+					uint32_t start = xTaskGetTickCount();
+					pidControl(aero, pid, set_point);
+					vTaskDelay(msToTick(pid.get_Ts())-(xTaskGetTickCount()-start));
+				}
+				break;
 		}
+		vTaskDelay(msToTick(10));
 	}
 }
-/*
- *
-	onOff,
-	mode,
-	angle,
-	motorPower,
-	linearization,
-	Kp,
-	Ki,
-	Kd,
-	Ts,
- *
- * */
+
+void commsHandler(void *pvParameters, aeropendulum& aero, pid_controller& pid)
+{
+	struct command receivedCommand;
+	receivedCommand.instruction = 0xFF;	/* reset command */
+	while(uxQueueMessagesWaiting(*((QueueHandle_t*)pvParameters)))
+	{
+		xQueueReceive(*((QueueHandle_t*)pvParameters), &(receivedCommand), (TickType_t)0);
+	}
+	if(receivedCommand.instruction != 0xFF)
+	{
+		handleRequest(aero, pid, receivedCommand);
+	}
+}
+
 void handleRequest(aeropendulum& aero, pid_controller& pid, struct command receivedCommand)
 {
 	float value;
@@ -584,7 +597,7 @@ uint8_t aeropendulum::motorInit(void)
 {
 	PWM_setDuty_milli(PROP_POWERON_MS);
 	vTaskDelay(msToTick(1000));
-	return PWM_setDuty_milli(2.2);
+	return aeropendulum::set_motorPower(2.2);
 }
 
 uint8_t aeropendulum::motorOff(void)
