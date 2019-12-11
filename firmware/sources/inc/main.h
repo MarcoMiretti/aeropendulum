@@ -61,6 +61,7 @@ enum variables
 {
 	onOff,
 	mode,
+	tracking,
 	set_point,
 	angle,
 	motorPower,

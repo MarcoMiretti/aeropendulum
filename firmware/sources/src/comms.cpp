@@ -322,6 +322,7 @@ uint8_t getVariableInt(uint8_t* variable, uint8_t len)
 {
 	if(stringCompare(variable, (uint8_t*)"onOff", len, sizeof("onOff"))) return onOff;
 	if(stringCompare(variable, (uint8_t*)"mode", len, sizeof("mode"))) return mode;
+	if(stringCompare(variable, (uint8_t*)"tracking", len, sizeof("tracking"))) return tracking;
 	if(stringCompare(variable, (uint8_t*)"set_point", len, sizeof("set_point"))) return set_point;
 	if(stringCompare(variable, (uint8_t*)"angle", len, sizeof("angle"))) return angle;
 	if(stringCompare(variable, (uint8_t*)"motorPower", len, sizeof("motorPower"))) return motorPower;
@@ -451,7 +452,7 @@ void floatWrite(float value)
 	{
 		value_str[7] = '0';
 	}
-
+	value_str[7] = 0;
 	/* write value */
 	bt_write(value_str,sizeof(value_str));
 }

@@ -2,6 +2,7 @@ import time
 import serial
 import matplotlib.pyplot as plt
 import numpy as np
+import datetime
 
 """
 writes in_str to bluetooth
@@ -33,7 +34,6 @@ value = float, int
 """
 def bt_set( variable, value ):
     bt_write('s '+variable+' '+str(float(value)))
-    print 's '+variable+' '+str(float(value))
 
 print 'port number:'
 input_port=raw_input()
@@ -52,6 +52,8 @@ print 'Enter your commands below.\r\nInsert "exit" to leave the application.'
 
 input=1
 while 1 :
+    u0 = 2.14711467;
+    mK = 0.11679756;
     # get keyboard input
     input = raw_input(">> ")
     if input == 'exit':
@@ -60,15 +62,19 @@ while 1 :
     if input == 'caracterize':
         
         motorPowers = []
-        angles = []
-        
+        sinAngles = []
+
+        # Prepare plot
         plt.ion()
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        line1, = ax.plot(angles, motorPowers, 'b*')
-        plt.xlim(0.3, 1.6)
+        line1, = ax.plot(sinAngles, motorPowers, '.')
+        plt.xlim(0.2, 1.2)
         plt.ylim(2.15, 2.3)
+        plt.xlabel('sin(Angle)')
+        plt.ylabel('Motor Power [PWM Duty%]')
         
+        # Initialize aeropendulum as PC mode
         bt_set('mode',0)
         print 'PC mode selected---'
         time.sleep(0.5)
@@ -76,34 +82,116 @@ while 1 :
         print 'Aero ON---'
         time.sleep(2)
         motorPower = 2.15
+        bt_set('motorPower',motorPower)
+        time.sleep(1)
+
+        # Gather caracterization data
         i = 0
         last_angle = 0
-        while(last_angle<3.14159265/2):
+        last_sinAngle = 0
+        increment = 0.001
+        while(last_angle<np.pi/2):
             new_angle = bt_get('angle')
-            while (new_angle < last_angle*0.95) or new_angle > last_angle*1.05:
+            new_sinAngle = np.sin(new_angle)
+            while (new_sinAngle < last_sinAngle*0.95) or new_sinAngle > last_sinAngle*1.05:
+                last_sinAngle = new_sinAngle
                 last_angle = new_angle
                 print 'waiting for steady state'
                 time.sleep(1)
             motorPowers.append(bt_get('motorPower'))
-            angles.append(new_angle)
-            motorPower += 0.001
+            sinAngles.append(new_sinAngle)
+            motorPower += increment
             bt_set('motorPower',motorPower)
-            last_angle = angles[-1]
+            last_sinAngle = sinAngles[-1]
+            last_angle = new_angle 
             i += 1
             print 'Iteration '+str(i)
-            line1.set_xdata(angles)
+            line1.set_xdata(sinAngles)
             line1.set_ydata(motorPowers)
             plt.draw()
             plt.pause(1e-17)
             time.sleep(1)
+        bt_set('motorPower',2.15)
+        plt.savefig('caracterization_data.pdf')
+        sinAngles_est = []
+        motorP_est = []
+        for i in range(len(sinAngles)):
+            if (sinAngles[i] > 0.376 and sinAngles[i] < 1 and motorPowers[i] != 0):
+                sinAngles_est.append(sinAngles[i])
+                motorP_est.append(motorPowers[i])
+
+        # Linearization coeficients calculation
+        res = np.polyfit(sinAngles_est, motorP_est, 1)
+
+        # Recreate the line on the plot
+        xp = np.linspace(0.37, 1, 100)
+        plt.plot(sinAngles_est, motorP_est, '.', xp, res[1]+res[0]*xp)
+        plt.show()
+
+        # Save caracterization data to logs
+        with open('logs.txt', 'a') as f:
+            f.write('Caracterization date:'+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")+'\n')
+            f.write('angles='+str(sinAngles_est)+'\n')
+            f.write('motorPower='+str(motorP_est)+'\n')
+        
+        # Save the coeficients
+        u0 = res[1]
+        mK = res[0]
+        print 'Caracterization result: '+str(res)
+
+
+
+
+    if input == 'track':
+        print 'Angle tracking, press ctrl-C to stop'
+        sampling_time = bt_get('Ts')
+        bt_set('onOff',0)
+        time.sleep(0.5)
+        bt_set('tracking',1)
+        time.sleep(0.5)
+        tracked_angles = []
+        seconds = []
+
+        # Prepare plot
+        plt.ion()
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        seconds = np.linspace(-10, 0, 100)
+        tracked_angles = np.full(100, 0.359)
+        line1, = ax.plot(seconds, tracked_angles, '.')
+        plt.xlim(-10, 0)
+        plt.ylim(0.35, 2.5)
+        plt.xlabel('time[s]')
+        plt.ylabel('angle[rad]')
+        
+        bt_set('onOff',1)
+        time.sleep(2)
+        try:
+            while(1):
+                rval = '0.0'
+                rval = ser.read_until('\x00')
+                rval = rval.replace('\x00','')
+                print rval
+                if rval != '' and rval != 'unknown':
+                    tracked_angles = np.roll(tracked_angles,-1)
+                    tracked_angles[-1] = float(rval)
+                    line1.set_ydata(tracked_angles)
+                    plt.draw()
+                    plt.pause(1e-17)
+        except KeyboardInterrupt:
+            bt_set('tracking',0)
+            time.sleep(0.5)
+            pass
+
+
     if input == 'read':
         out = ''
         out += ser.read(ser.in_waiting)
         if out != '':
             print ">>" + out
     if input[0] == 'p':
-        bt_write('p motorPower')
-        while ser.in_waiting < 8:
+        bt_write(input)
+        while ser.in_waiting < 7:
             time.sleep(0.01)
         out = ''
         out += ser.read(ser.in_waiting)

@@ -58,6 +58,10 @@ class aeropendulum {
 		 * */
 		void set_mode(uint8_t);
 		/**
+		 * \brief	Set tracking mode.
+		 * */
+		void set_tracking(uint8_t);
+		/**
 		 * \brief	Set propeller MK constant.
 		 * */
 		void	set_propellerConst_MK(float);
@@ -84,6 +88,11 @@ class aeropendulum {
 		 * \retval 	operation mode
 		 * */
 		uint8_t 	get_mode(void);
+		/**
+		 * \brief	Get tracking.
+		 * \retval 	tracking	
+		 * */
+		uint8_t 	get_tracking(void);
 		/**
 		 * \brief	Get propeller power (ms).
 		 * \retval 	power in ms
@@ -113,6 +122,7 @@ class aeropendulum {
 	private:
 		uint8_t onOff;
 		uint8_t mode;
+		uint8_t tracking;
 		float	setPoint;
 		float	angle;
 		float	motorPower;
@@ -461,18 +471,23 @@ void aero_driving(void *pvParameters)
 				while((uint32_t)aero.get_onOff())
 				{
 					commsHandler(pvParameters, aero, pid);
+					aero.updateAngle();
+					if((aero.get_tracking()) && (aero.get_angle()>0.365)) floatWrite(aero.get_angle());
 					uint32_t start = xTaskGetTickCount();
 				
 					vTaskDelay(msToTick(pid.get_Ts())-(xTaskGetTickCount()-start));
 				}
 				break;
+
 			case mode_pidControl:
 				/*-- PID CONTROL --*/
 				/* starts motors and sets default values */
 				pidControlInit(aero, pid, set_point);
 				while((uint32_t)aero.get_onOff())
 				{
-					commsHandler(*((QueueHandle_t*)pvParameters), aero, pid);
+					aero.updateAngle();
+					if(aero.get_tracking()) floatWrite(aero.get_angle());
+					commsHandler(pvParameters, aero, pid);
 					uint32_t start = xTaskGetTickCount();
 					pidControl(aero, pid, set_point);
 					vTaskDelay(msToTick(pid.get_Ts())-(xTaskGetTickCount()-start));
@@ -510,6 +525,9 @@ void handleRequest(aeropendulum& aero, pid_controller& pid, struct command recei
 				break;
 			case mode:
 				value = aero.get_mode();	
+				break;
+			case tracking:
+				value = aero.get_tracking();	
 				break;
 			case angle:
 				aero.updateAngle();
@@ -549,6 +567,9 @@ void handleRequest(aeropendulum& aero, pid_controller& pid, struct command recei
 				break;
 			case mode:	
 				aero.set_mode((uint8_t)value);
+				break;
+			case tracking:	
+				aero.set_tracking((uint8_t)value);
 				break;
 			case set_point:
 				aero.set_setPoint(value);
@@ -635,6 +656,11 @@ void aeropendulum::set_mode(uint8_t mode)
 	aeropendulum::mode = mode;
 }
 
+void aeropendulum::set_tracking(uint8_t tracking)
+{
+	aeropendulum::tracking = tracking;
+}
+
 void aeropendulum::set_propellerConst_MK(float MK)
 {
 	aeropendulum::propellerConst_MK = MK;
@@ -669,6 +695,11 @@ uint8_t aeropendulum::get_onOff()
 uint8_t aeropendulum::get_mode()
 {
 	return aeropendulum::mode;
+}
+
+uint8_t aeropendulum::get_tracking()
+{
+	return aeropendulum::tracking;
 }
 
 float aeropendulum::get_angle()
