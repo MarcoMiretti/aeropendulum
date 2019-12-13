@@ -62,6 +62,7 @@ enum variables
 	onOff,
 	mode,
 	tracking,
+	prbs_amplitude,
 	set_point,
 	angle,
 	motorPower,
@@ -83,6 +84,7 @@ enum modes
 {
 	mode_pcOperation,
 	mode_pidControl,
+	mode_identification,
 };
 
 struct command

@@ -62,6 +62,10 @@ class aeropendulum {
 		 * */
 		void set_tracking(uint8_t);
 		/**
+		 * \brief	Set PRBS amplitude.
+		 * */
+		void	set_prbs_amplitude(float);
+		/**
 		 * \brief	Set propeller MK constant.
 		 * */
 		void	set_propellerConst_MK(float);
@@ -94,6 +98,11 @@ class aeropendulum {
 		 * */
 		uint8_t 	get_tracking(void);
 		/**
+		 * \brief	get PRBS amplitude.
+		 * \retval 	PRBS amplitude
+		 * */
+		float	get_prbs_amplitude(void);
+		/**
 		 * \brief	Get propeller power (ms).
 		 * \retval 	power in ms
 		 * */
@@ -123,6 +132,7 @@ class aeropendulum {
 		uint8_t onOff;
 		uint8_t mode;
 		uint8_t tracking;
+		float	prbs_amplitude;
 		float	setPoint;
 		float	angle;
 		float	motorPower;
@@ -413,41 +423,32 @@ void aero_driving(void *pvParameters)
 	aeropendulum aero;
 	pid_controller pid;
 	/* aerodynamic constants */
-	float mk = 0.15935738*0.88;//0.21970103;
-	float u0 = 2.11459009;//2.12768394;
+	float mk = 0.1347602;
+	float u0 = 2.13746072;
+	float prbs_amplitude = 0.03;
+	float mode = mode_pidControl;
 	float ninetyConst = 0.02;//0.02;
 	aero.set_propellerConst_MK(mk);
 	aero.set_propellerConst_u0(u0);
 	aero.set_over90_compensation_cohef(ninetyConst);
-
-
-	/* pid constants */
-	//float Kp = 0.04;
-	//float Ki = 0.0001;
-	//float Kd = 0.002;
-	
-	float Kp_c = 0.045;
-	float Ki_c = 0.00002;
-	float Kd_c = 0.05;
+	aero.set_prbs_amplitude(prbs_amplitude);
+	aero.set_mode(mode);
 /*
-	float Kp_r = 0.035;
-	float Ki_r = 0.000008;
-	float Kd_r = 0.000001;
+	float Kp = 0.0318;
+	float Ki = 0.02474;
+	float Kd = 0.00613;
 */
-	//float command_vs_reject_thres = 0.1745; //when is +- 10 grad from set point switch to reject mode
+	float Kp = 0.03294;
+	float Ki = 0.00852;
+	float Kd = 0.007239;
 
-	float sampling_time = 20;//milliseconds
-	float derivative_filter_cutoff = 1000;
+	float sampling_time = 20;//millisecond
+	float derivative_filter_cutoff = 92.42;
 	float wH = 2.35;
 	float wL = 2.1;
-	pid.set_Kp_c(Kp_c);
-	pid.set_Ki_c(Ki_c);
-	pid.set_Kd_c(Kd_c);
-	//pid.set_Kp_r(Kp_r);
-	//pid.set_Ki_r(Ki_r);
-	//pid.set_Kd_r(Kd_r);
-
-	//pid.set_command_vs_reject_thres(command_vs_reject_thres);
+	pid.set_Kp(Kp);
+	pid.set_Ki(Ki);
+	pid.set_Kd(Kd);
 
 	pid.set_Ts(sampling_time);
 	pid.set_N(derivative_filter_cutoff);
@@ -462,6 +463,8 @@ void aero_driving(void *pvParameters)
 	{	
 		/* detect operation modes */
 		commsHandler(pvParameters, aero, pid);
+		uint16_t track_delay = (uint32_t)(100/Ts);
+		uint16_t track_count = 0;
 		switch((uint32_t)aero.get_mode())
 		{
 			case mode_pcOperation:
@@ -478,17 +481,62 @@ void aero_driving(void *pvParameters)
 					vTaskDelay(msToTick(pid.get_Ts())-(xTaskGetTickCount()-start));
 				}
 				break;
-
+			
+			case mode_identification:
+				{
+					/*-- PC operation mode --*/
+					/* the aeropendulum is operated only by pc set/get commands */
+					aero.motorInit();
+					uint16_t i;
+					uint8_t j = 0;
+					int prbs[] = {1,-1,1,-1,-1,1,1,-1,-1,1,-1,1,1,1,-1,-1,1,1,1,-1,1,-1,-1,-1,1,1,1,1,1,-1,-1,-1,1,1,1,-1,1,1,-1,1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,1,-1,-1,-1,1,-1,1,1,-1,1,1,-1,1};
+					while(aero.get_onOff())
+					{
+						if(aero.get_angle()>PI/2)
+						{
+							for(i=0;i<630;i++)
+							{
+								aero.updateAngle();
+								floatWrite(aero.get_angle());
+								uint32_t start = xTaskGetTickCount();
+								if(j == 0)
+								{
+									aero.set_motorPower(feedbackLinearization(aero)+prbs[(uint16_t)(i/10)]*aero.get_prbs_amplitude());
+									j = 10;
+								}
+								j--;
+								vTaskDelay(msToTick(pid.get_Ts())-(xTaskGetTickCount()-start));
+							}
+							aero.set_onOff(0);						
+						}
+						else
+						{
+							aero.updateAngle();
+							commsHandler(pvParameters, aero, pid);
+							aero.set_motorPower(feedbackLinearization(aero));
+							vTaskDelay(msToTick(pid.get_Ts()));
+						}	
+					}
+				break;
+				}
 			case mode_pidControl:
 				/*-- PID CONTROL --*/
 				/* starts motors and sets default values */
 				pidControlInit(aero, pid, set_point);
 				while((uint32_t)aero.get_onOff())
 				{
-					aero.updateAngle();
-					if(aero.get_tracking()) floatWrite(aero.get_angle());
-					commsHandler(pvParameters, aero, pid);
 					uint32_t start = xTaskGetTickCount();
+					aero.updateAngle();
+					if(aero.get_tracking() && track_count == track_delay)
+					{
+						floatWrite(aero.get_angle());
+						track_count = 0;
+					}
+					else
+					{
+						track_count++;
+					}
+					commsHandler(pvParameters, aero, pid);
 					pidControl(aero, pid, set_point);
 					vTaskDelay(msToTick(pid.get_Ts())-(xTaskGetTickCount()-start));
 				}
@@ -528,6 +576,9 @@ void handleRequest(aeropendulum& aero, pid_controller& pid, struct command recei
 				break;
 			case tracking:
 				value = aero.get_tracking();	
+				break;
+			case prbs_amplitude:
+				value = aero.get_prbs_amplitude();
 				break;
 			case angle:
 				aero.updateAngle();
@@ -570,6 +621,9 @@ void handleRequest(aeropendulum& aero, pid_controller& pid, struct command recei
 				break;
 			case tracking:	
 				aero.set_tracking((uint8_t)value);
+				break;
+			case prbs_amplitude:
+				aero.set_prbs_amplitude(value);
 				break;
 			case set_point:
 				aero.set_setPoint(value);
@@ -661,6 +715,11 @@ void aeropendulum::set_tracking(uint8_t tracking)
 	aeropendulum::tracking = tracking;
 }
 
+void aeropendulum::set_prbs_amplitude(float prbs_amplitude)
+{
+	aeropendulum::prbs_amplitude = prbs_amplitude;
+}
+
 void aeropendulum::set_propellerConst_MK(float MK)
 {
 	aeropendulum::propellerConst_MK = MK;
@@ -700,6 +759,11 @@ uint8_t aeropendulum::get_mode()
 uint8_t aeropendulum::get_tracking()
 {
 	return aeropendulum::tracking;
+}
+
+float aeropendulum::get_prbs_amplitude()
+{
+	return aeropendulum::prbs_amplitude;
 }
 
 float aeropendulum::get_angle()

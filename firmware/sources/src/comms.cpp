@@ -323,6 +323,7 @@ uint8_t getVariableInt(uint8_t* variable, uint8_t len)
 	if(stringCompare(variable, (uint8_t*)"onOff", len, sizeof("onOff"))) return onOff;
 	if(stringCompare(variable, (uint8_t*)"mode", len, sizeof("mode"))) return mode;
 	if(stringCompare(variable, (uint8_t*)"tracking", len, sizeof("tracking"))) return tracking;
+	if(stringCompare(variable, (uint8_t*)"prbs_amplitude", len, sizeof("prbs_amplitude"))) return prbs_amplitude;
 	if(stringCompare(variable, (uint8_t*)"set_point", len, sizeof("set_point"))) return set_point;
 	if(stringCompare(variable, (uint8_t*)"angle", len, sizeof("angle"))) return angle;
 	if(stringCompare(variable, (uint8_t*)"motorPower", len, sizeof("motorPower"))) return motorPower;
