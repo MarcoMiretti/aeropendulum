@@ -56,9 +56,13 @@ while 1 :
     mK = 0.11679756;
     # get keyboard input
     input = raw_input(">> ")
+
+    
     if input == 'exit':
         ser.close()
         exit()
+
+
     if input == 'caracterize':
         
         motorPowers = []
@@ -77,7 +81,7 @@ while 1 :
         # Initialize aeropendulum as PC mode
         bt_set('mode',0)
         print 'PC mode selected---'
-        time.sleep(0.5)
+        time.sleep(1)
         bt_set('onOff',1)
         print 'Aero ON---'
         time.sleep(2)
@@ -142,9 +146,51 @@ while 1 :
 
 
 
+
+
+
+
+    if input == 'identify':
+
+        ser.flushInput()
+        bt_set('onOff',0)
+        time.sleep(1)
+        bt_set('mode', 2.0)
+        time.sleep(1)
+        id_angles = []
+
+        bt_set('onOff',1)
+        time.sleep(2)
+
+        while ser.in_waiting<7:
+            time.sleep(0.1)
+
+        for i in range(630):
+            rval = '0.0'
+            rval = ser.read_until('\x00')
+            rval = rval.replace('\x00','')
+            id_angles.append(float(rval))
+            print rval
+        print id_angles
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     if input == 'track':
         print 'Angle tracking, press ctrl-C to stop'
-        sampling_time = bt_get('Ts')
+        sampling_time = 0.1
+        n_of_samples = 100
         bt_set('onOff',0)
         time.sleep(0.5)
         bt_set('tracking',1)
@@ -156,7 +202,8 @@ while 1 :
         plt.ion()
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        seconds = np.linspace(-10, 0, 100)
+        seconds = np.linspace(-sampling_time*n_of_samples*1.8, 0, n_of_samples)
+        all_tracked = []
         tracked_angles = np.full(100, 0.359)
         line1, = ax.plot(seconds, tracked_angles, '.')
         plt.xlim(-10, 0)
@@ -171,18 +218,31 @@ while 1 :
                 rval = '0.0'
                 rval = ser.read_until('\x00')
                 rval = rval.replace('\x00','')
-                print rval
                 if rval != '' and rval != 'unknown':
+                    rval = float(rval)
                     tracked_angles = np.roll(tracked_angles,-1)
-                    tracked_angles[-1] = float(rval)
+                    tracked_angles[-1] = rval
+                    all_tracked.append(rval)
                     line1.set_ydata(tracked_angles)
                     plt.draw()
                     plt.pause(1e-17)
         except KeyboardInterrupt:
             bt_set('tracking',0)
-            time.sleep(0.5)
+            time.sleep(1)
             pass
+        
+        # Save caracterization data to logs
+        with open('track_logs.txt', 'a') as f:
+            f.write('Caracterization date:'+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")+'\n')
+            f.write('angles='+str(all_tracked)+'\n')
+    
+    if input == 'on':
+        bt_set('onOff',1)
+        time.sleep(2)
 
+    if input == 'off':
+        bt_set('onOff',0)
+        time.sleep(1)
 
     if input == 'read':
         out = ''
@@ -198,5 +258,8 @@ while 1 :
         ser.flushInput()
         if out != '':
             print '>>'+out
-    else:
+
+    if input[0] == 's':
         bt_write(input)
+
+    ser.flushInput()
