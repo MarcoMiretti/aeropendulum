@@ -423,9 +423,9 @@ void aero_driving(void *pvParameters)
 	aeropendulum aero;
 	pid_controller pid;
 	/* aerodynamic constants */
-	float mk = 0.1347602;
-	float u0 = 2.13746072;
-	float prbs_amplitude = 0.03;
+	float mk = 0.13554907;
+	float u0 = 2.12802411;
+	float prbs_amplitude = 0.015;
 	float mode = mode_pidControl;
 	float ninetyConst = 0.02;//0.02;
 	aero.set_propellerConst_MK(mk);
@@ -438,12 +438,12 @@ void aero_driving(void *pvParameters)
 	float Ki = 0.02474;
 	float Kd = 0.00613;
 */
-	float Kp = 0.03294;
-	float Ki = 0.00852;
-	float Kd = 0.007239;
+	float Kp = 0.03;
+	float Ki = 0.00001;
+	float Kd = 0.000015;
 
-	float sampling_time = 20;//millisecond
-	float derivative_filter_cutoff = 92.42;
+	float sampling_time = 10;//millisecond
+	float derivative_filter_cutoff = 10000;
 	float wH = 2.35;
 	float wL = 2.1;
 	pid.set_Kp(Kp);
@@ -684,8 +684,14 @@ uint8_t aeropendulum::motorOff(void)
 uint8_t aeropendulum::updateAngle(void)
 {
 	uint16_t COUNT;
-	if(TIM3->CNT == 0xFFFF) COUNT = 1;
-	else 		COUNT = TIM3->CNT;
+	if(TIM3->CNT & 0x8000)
+	{
+		COUNT = 1;
+	}
+	else
+	{
+		COUNT = TIM3->CNT;
+	}
 	aeropendulum::angle = (((COUNT)*DEGREES_PER_PULSE)+(AERO_BASE_ANGLE))*PI/180;
 	return 0;
 }
@@ -841,7 +847,7 @@ void pid_controller::update_parameters()
 
 float pid_controller::update_manipulated(float error)
 {
-	pid_controller::integratorClamping(error);
+	//pid_controller::integratorClamping(error);
 	pid_controller::e[2] = pid_controller::e[1];
 	pid_controller::e[1] = pid_controller::e[0];
 	pid_controller::e[0] = error;
