@@ -3,6 +3,8 @@ import serial
 import matplotlib.pyplot as plt
 import numpy as np
 import datetime
+import csv
+
 
 """
 writes in_str to bluetooth
@@ -47,6 +49,8 @@ ser = serial.Serial(
     timeout=0.2
     )
 ser.isOpen()
+
+in_data = [1,-1,1,-1,-1,1,1,-1,-1,1,-1,1,1,1,-1,-1,1,1,1,-1,1,-1,-1,-1,1,1,1,1,1,-1,-1,-1,1,1,1,-1,1,1,-1,1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,1,-1,-1,-1,1,-1,1,1,-1,1,1,-1,1,1,-1,1,-1,-1,1,1,-1,-1,1,-1,1,1,1,-1,-1,1,1,1,-1,1,-1,-1,-1,1,1,1,1,1,-1,-1,-1,1,1,1,-1,1,1,-1,1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,1,-1,-1,-1,1,-1,1,1,-1,1,1,-1,1,1,-1,1,-1,-1,1,1,-1,-1,1,-1,1,1,1,-1,-1,1,1,1,-1,1,-1,-1,-1,1,1,1,1,1,-1,-1,-1,1,1,1,-1,1,1,-1,1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,1,-1,-1,-1,1,-1,1,1,-1,1,1,-1,1,1,-1,1,-1,-1,1,1,-1,-1,1,-1,1,1,1,-1,-1,1,1,1,-1,1,-1,-1,-1,1,1,1,1,1,-1,-1,-1,1,1,1,-1,1,1,-1,1,-1,-1,-1,-1,1,-1,-1,-1,-1,-1,1,-1,-1,-1,1,-1,1,1,-1,1,1,-1,1]
 
 print 'Enter your commands below.\r\nInsert "exit" to leave the application.'
 
@@ -158,23 +162,32 @@ while 1 :
         bt_set('mode', 2.0)
         time.sleep(1)
         id_angles = []
-
+        linear_input = []
         bt_set('onOff',1)
         time.sleep(2)
 
         while ser.in_waiting<7:
             time.sleep(0.1)
 
-        for i in range(630):
+        for i in range(4*630):
             rval = '0.0'
             rval = ser.read_until('\x00')
             rval = rval.replace('\x00','')
             id_angles.append(float(rval))
-            print rval
-        print id_angles
+
+        with open('output.csv', 'wb') as myfile:
+            wr = csv.writer(myfile)
+            wr.writerow(id_angles)
 
 
 
+        for i in in_data:
+            for j in range(10):
+                linear_input.append(-0.015*in_data[i])
+
+        with open('lin_input.csv', 'wb') as myfile:
+            wr = csv.writer(myfile)
+            wr.writerow(linear_input)
 
 
 
