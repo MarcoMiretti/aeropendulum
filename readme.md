@@ -1,4 +1,4 @@
-<img src="https://github.com/MarcoMiretti/aeropendulum/blob/master/docs/essay/figures/aeropendulum_figure.png" alt="drawing" align="left" width="80" height="80"/>
+<img src="https://github.com/MarcoMiretti/aeropendulum/blob/master/docs/essay/figures/aeropendulum_figure.png" alt="drawing" align="left" width="245" height="160"/>
 
 # Aeropendulum [![Build Status](https://travis-ci.org/MarcoMiretti/aeropendulum.svg?branch=master)](https://travis-ci.org/MarcoMiretti/aeropendulum)
 This propeller driven pendulum was submitted as the final project of the subject Control Systems (UTN San Francisco, Córdoba). The device is designed to track some reference angle as well also to reject disturbances. 
