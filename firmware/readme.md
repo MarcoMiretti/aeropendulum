@@ -16,7 +16,7 @@ make download
 * GNU Make
 * OpenOCD
 
-## \emoji :bug: Debug:
+## :beetle: Debug:
 ```
 make server_open
 ```

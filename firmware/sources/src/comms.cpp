@@ -51,40 +51,36 @@ void decodeInstruction(uint8_t *rx_buffer, uint16_t len, void* pvParameters);
 uint8_t getCommand(uint8_t *rx_buffer, uint16_t len);
 /**
  * \brief deletes the first x characters of a string
- * \param sting = string pointer
+ * \param string = string pointer
  * \param len	= string lenght
  * \param x	= number of characters to delete
  * \return	new len
  * */
 uint8_t eraseFirstXChars(uint8_t* string, uint16_t len, uint16_t x);
 /**
+ * \brief Compare if str1 is equal to str2 
+ * \param str1 first string
+ * \param str2 second string
+ * \param len1 lenght of first string
+ * \param len2 lenght of second string
+ * \return 1 if strings are equal, 0 if they aren't 
+ * */
+uint8_t stringCompare(uint8_t* str1, uint8_t* str2, uint8_t len1, uint8_t len2);
+/**
  * \brief get the variable inside the function 
- * \param rx_buffer = the reception buffer (without command)
- * \param len	= string lenght
- * \param x	= number of characters to delete
- * \return 	new len
+ * \param rx_buffer 	= the reception buffer (without command)
+ * \param len		= string lenght
+ * \param variable	= pointer to the string that will contain the variable 
+ * \return 		new len 
  * */
 uint16_t getVariable(uint8_t* rx_buffer, uint16_t len, uint8_t* variable);
 /**
  * \brief	Gives variable numeric equivalent
  * \param	variable = string that contains the variable name
+ * \param	len	= variable len
  * \retval	Variable numeric equivalent
  */
 uint8_t getVariableInt(uint8_t* variable, uint8_t len);
-/**
- * \brief get the float value of buffer
- * \note	this is a magic trick
- *  		
- *  	address	      |	uint8_t | uint8_t | uint8_t | uint8_t |
- *  	address	      | 	      float_32		      |
- *
- *  i position a float 32 where the four uint8_t values were, hence converting four ascii
- *  chars to a 32 bit float.
- * \param rx_buffer = rx_buffer pointer (only contains value in ascii)
- * \param len	= string lenght
- * \return 	float value
- * */
-float getFloatValueFromChar(uint8_t* rx_buffer, uint16_t len);
 /**
  * \brief get the float value of buffer
  * \note	this function converts a string to a float
@@ -93,11 +89,33 @@ float getFloatValueFromChar(uint8_t* rx_buffer, uint16_t len);
  * \return 	float value
  * */
 float getFloatValue(uint8_t* rx_buffer, uint16_t len);
+/**
+ * \brief Communicates with aero_driving task and passes a queue to print a variable via bluetooth
+ * \param instruction a numeric value for the instruction (get)
+ * \param variable a numeric value for the variable to print
+ * \param pvParameters the queue to aero_driving
+ * \retval 0 if success
+ * */
 uint8_t bt_pVariable(uint8_t instruction, uint8_t variable, void* pvParameters);
+/**
+ * \brief Communicates with aero_driving task and passes a queue to set a variable via bluetooth
+ * \param instruction a numeric value for the instruction (set)
+ * \param variable a numeric value for the variable to set
+ * \param value a numeric value to give to said variable
+ * \param pvParameters the queue to aero_driving
+ * \retval 0 if success
+ * */
 uint8_t bt_sVariable(uint8_t instruction, uint8_t variable, float value, void* pvParameters);
 /** @}*/
 
+/**
+ * \brief buffer for dma uart5 (bluetooth) reception
+ * */
 uint8_t dma_uart_rx_buffer[32];
+
+/**
+ * \brief buffer for dma uart5 (bluetooth) transmission
+ * */
 uint8_t dma_uart_tx_buffer[8];
 
 /** @addtogroup extern_vars 
@@ -284,27 +302,6 @@ float getFloatValue(uint8_t* rx_buffer, uint16_t len)
 		value *= -1;
 	}
 	return value;
-}
-
-float getFloatValueFromChars(uint8_t* rx_buffer, uint16_t len)
-{
-	uint8_t* first_address_pointer;
-	first_address_pointer = &rx_buffer[0];
-	uint8_t i;
-	for(i=0;i<4;i++)
-	{
-		/* if there is no more data */
-		if(i>=len)
-		{
-			*first_address_pointer = (uint8_t)0x00;
-		}
-		/* increment pointer address */
-		first_address_pointer++;
-	}
-
-	float* address_pointer =  (float*)rx_buffer;
-	float floatValue = *address_pointer;
-	return floatValue;
 }
 
 uint8_t stringCompare(uint8_t* str1, uint8_t* str2, uint8_t len1, uint8_t len2)

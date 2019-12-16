@@ -18,6 +18,9 @@
 /** \addtogroup defs Function definitions 
  *  @{
  */
+/**
+ * \brief Init Reset and clock control
+ * */
 uint8_t RCC_Init(void);
 uint8_t GPIO_Init(void);
 uint8_t TIM3_Init(void);
@@ -28,7 +31,7 @@ uint8_t PWM_Init(void);
 /** @addtogroup queues
   * @{
   */
-QueueHandle_t xDrivingQ;/* for driving to read */
+QueueHandle_t xDrivingQ; /**< Queue that communicates comms->driving */
 /**
   * @}
   */

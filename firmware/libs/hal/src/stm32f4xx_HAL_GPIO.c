@@ -137,7 +137,7 @@ uint8_t GPIO_SetAlternateFunction(uint8_t port, uint8_t pin, uint8_t af)
  * \brief Set GPIO Out Data (with ODR reg.)
  * \param port The GPIO Port (A=0, I=8)
  * \param pin The GPIO pin number
- * \param dir Output data:
+ * \param data Output data:
  * 		0b00 = In
  * 		0b01 = Out
  * \retval 0 if success

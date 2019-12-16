@@ -25,12 +25,12 @@
 /** @addtogroup GPIO_Constants GPIO Constants
   * @{
   */
-#define LD4_GPIO_PIN 		(1 << 12)  				/* PD12 */
-#define LD4_MODE_OUT		(1 << 24)  				/* General Purpose Input for PD12 */
-#define LD5_GPIO_PIN 		(1 << 14)  				/* PD14 */
-#define PD14_AFRH_AF2		((uint32_t)0x02000000)			/* PD14 to TIM4 */
-#define PD14_OSPEEDR_VHS	((uint32_t)0x30000000)			/* PD14 High Speed (100Mhz and beyond) */
-#define LD5_MODE_ALT		((uint32_t)0x20000000)  		/* General Purpose Input for PD14 */
+#define LD4_GPIO_PIN 		(1 << 12)  				/**< PD12 */
+#define LD4_MODE_OUT		(1 << 24)  				/**< General Purpose Input for PD12 */
+#define LD5_GPIO_PIN 		(1 << 14)  				/**< PD14 */
+#define PD14_AFRH_AF2		((uint32_t)0x02000000)			/**< PD14 to TIM4 */
+#define PD14_OSPEEDR_VHS	((uint32_t)0x30000000)			/**< PD14 High Speed (100Mhz and beyond) */
+#define LD5_MODE_ALT		((uint32_t)0x20000000)  		/**< General Purpose Input for PD14 */
 /**
   * @}
   */
@@ -39,24 +39,28 @@
 /** @addtogroup TIM_Constants TIM Constants
   * @{
   */
-#define TIM4_PSC			((uint16_t)0x0008)
-#define TIM4_ARR 			((uint16_t)(8000000/(TIM4_PSC*PWM_FREQ)-1))		/* Auto reload register = 8000000 / 46*350 - 1 = 0x1F0 set for 10kHz PWM*/
-#define TIM_PSCReloadMode_Immediate     ((uint16_t)0x0001)
+#define TIM4_PSC			((uint16_t)0x0008) 					/**< Set prescaller value */
+#define TIM4_ARR 			((uint16_t)(8000000/(TIM4_PSC*PWM_FREQ)-1))		/**< Auto reload register = 8000000 / 46*350 - 1 = 0x1F0 set for 10kHz PWM*/
+#define TIM_PSCReloadMode_Immediate     ((uint16_t)0x0001)					/**< Reload prescaller */
 /** @addtogroup PWM_Constants PWM Constants
   * @{
   */
-#define PWM_FREQ			((uint16_t)100)
-#define TIM4_CCMR2_OC3M 		((uint16_t)0x0070)		/* PWM mode 2 */
-#define TIM4_CCER_CC3E			((uint16_t)0x0001 << 8)
-#define TIM4_CCER_CC3P			((uint16_t)0x0002 << 8) 	/* Polarity Low */
-#define TIM4_CCR3			((uint16_t)0x0000)  		/* 25% duty TODO: implement a macro */
-#define TIM4_OCPreload_Enable           ((uint16_t)0x0008)
+#define PWM_FREQ			((uint16_t)100)			/**< PWM frequency */
+#define TIM4_CCMR2_OC3M 		((uint16_t)0x0070)		/**< PWM mode 2 */
+#define TIM4_CCER_CC3E			((uint16_t)0x0001 << 8)		/**< Polarity Low */
+#define TIM4_CCER_CC3P			((uint16_t)0x0002 << 8) 	/**< Polarity Low */
+#define TIM4_CCR3			((uint16_t)0x0000)  		/**< 25% duty */
+#define TIM4_OCPreload_Enable           ((uint16_t)0x0008)		/**< Enable preload */
 /**
   * @}
   */
 /**
   * @}
   */
+
+/**
+ * \brief Variables allowed for bluetooth set-get
+ * */
 enum variables
 {
 	onOff,
@@ -74,12 +78,18 @@ enum variables
 	Ts,
 };
 
+/**
+ * \brief Allowed instructions to use with bluetooth 
+ * */
 enum instructions
 {
 	print,
 	set,
 };
 
+/**
+ * \brief Implemented driving operating modes 
+ * */
 enum modes
 {
 	mode_pcOperation,
@@ -87,15 +97,18 @@ enum modes
 	mode_identification,
 };
 
+/**
+ * \brief Structure of a bluetooth command. 
+ * */
 struct command
 {
-	uint8_t instruction;
-	uint8_t variable;
-	float value;
+	uint8_t instruction; 	/**< Instruction of the command */
+	uint8_t variable;	/**< variable to set/get */
+	float value;		/**< value to set to variable */
 };
 
 /**
- * \brief Converts float to ascii string and writes it \TODO: separate in two functions
+ * \brief Converts float to ascii string and writes it TODO: separate in two functions
  * \param value = float to convert
  **/
 void floatWrite(float value);

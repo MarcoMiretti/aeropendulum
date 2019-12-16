@@ -23,6 +23,6 @@
 /** \addtogroup function_macros Function like macros
  *  @{
  */
-#define msToTick(ms) 		(ms/portTICK_PERIOD_MS)
+#define msToTick(ms) 		(ms/portTICK_PERIOD_MS)	/**< Macro that converts Milliseconds to RTOS ticks */
 /** @} */
 #endif /* __STM32F4_HAL_H */

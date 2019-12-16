@@ -36,10 +36,16 @@ void vApplicationStackOverflowHook( xTaskHandle *pxTask, signed char *pcTaskName
 	GPIO_OutData(3,12,0);
 }
 
+/**
+ * \brief hook for idle
+ **/
 void vApplicationIdleHook( void )
 {
 }
 
+/**
+ * \brief hook for tick
+ * */
 void vApplicationTickHook( void )
 {
 }

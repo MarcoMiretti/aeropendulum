@@ -19,6 +19,10 @@
 /** \addtogroup defs 
  *  @{
  */
+
+/**
+ * \brief The aeropendulum class is in charge of creating an aeropendulum instance. Said instance has all the aeropendulum mechanical caracteristics, its options, and the sensor/actuator drivin methods.
+ **/
 class aeropendulum {
 	public:
 		/**
@@ -141,7 +145,10 @@ class aeropendulum {
 		float	over90_compensation_cohef;
 };
 
-
+/**
+ * \brief This class can create an pid_controller object. Said object has all the necessary variables an methods to give a manipulated variable given an error.
+ *
+ **/
 class pid_controller
 {
 	public:
@@ -363,20 +370,6 @@ uint8_t	PWM_setDuty_milli(float duty);
  * \return Does not return
  */
 void 	linearTest(aeropendulum& aero);
-/*
- * \brief 	Function to carecterize the propellerPower and angle relation.
- * \return 	Does not return.
- * \note 	To avoid the monotone work of printing at each step, break commands can be used in gdb, for example:
- * 			b driving.cpp:151
- * 			commands 1
- * 				>p encoderAngle
- * 				>p motorPower
- * 				>set motorPower += 0.001
- * 				>c
- * 			set logging on
- * 			c
- */
-uint8_t caracterize(aeropendulum& aero);
 /**
  * \brief 	Feedback Linearization
  * \note 	Given that the system is nonlinear, to avoid the usual linearization between points, we can apply a feedback linearization to cancel the nonlinear term that is to add u0+m*g*sin(angle)/k to the manipulated. The values mg/k were infered with steady state tests.
@@ -394,25 +387,35 @@ void bangBangControl(aeropendulum& aero ,float set_point);
 /**
  * \brief 	PID control update
  * \param	aero = aeropendulum instance
+ * \param	pid = pid controller instance
  * \param	set_point = desired setpoint in radians
- * \param 	refresh_period = refresh period of the control loop
  * \return 	
  */
 void pidControl(aeropendulum& aero, pid_controller& pid, float set_point);
 /**
  * \brief 	PID control initialization 
  * \param	aero = aeropendulum instance
+ * \param	pid = pid controller instance
  * \param	set_point = desired setpoint in radians
- * \param 	refresh_period = refresh period of the control loop
  * \return 	
  */
 void pidControlInit(aeropendulum& aero, pid_controller& pid, float set_point);
 /** @} */
 
-void impulse(aeropendulum& aero, float amplitude, float duration_ms);
-
+/**
+ * \brief handle a received command, writes to bluetooth or reads from it
+ * \param aero aeropendulum instance
+ * \param pid pid_controller instance
+ * \param receivedCommand command struct with requested command
+ * */
 void handleRequest(aeropendulum& aero, pid_controller& pid, struct command receivedCommand);
 
+/**
+ * \brief handle a queue request and generate a received Command then call handleRequest
+ * \param pvParameters queue received from aero_comms task
+ * \param aero aeropendulum instance
+ * \param pid pid_controller instance
+ * */
 void commsHandler(void *pvParameters, aeropendulum& aero, pid_controller& pid);
 /**
  * \brief 	Aeropendulum driving task.
@@ -650,16 +653,6 @@ void handleRequest(aeropendulum& aero, pid_controller& pid, struct command recei
 				break;
 		}
 		break;
-	}
-}
-void impulse(aeropendulum& aero, float amplitude, float duration_ms)
-{
-	aero.motorInit();
-	vTaskDelay(msToTick(duration_ms));
-	aero.motorOff();
-	while(1)
-	{
-	
 	}
 }
 
@@ -911,7 +904,7 @@ void pid_controller::integratorClamping(float error)
 }
 
 /**
- * \addtogroup pid_getters PID setters
+ * \addtogroup pid_setters PID setters
  * @{
  */
 void pid_controller::set_Kd(float Kd)
@@ -1084,33 +1077,6 @@ void linearTest(aeropendulum& aero)
 		aero.set_motorPower(feedbackLinearization(aero));
 		vTaskDelay(msToTick(10));
 	}
-}
-
-
-
-uint8_t caracterize(aeropendulum& aero)
-{
-	float motorPower = 2.15; 
-	float encoderAngle = 0;
-	float tmpEncoderAngle;
-	aero.motorInit();
-	aero.set_motorPower(motorPower);
-	while(1)
-	{
-		aero.updateAngle();
-		tmpEncoderAngle = aero.get_angle();
-		if((encoderAngle < 1.005*tmpEncoderAngle) && (encoderAngle > 0.995*tmpEncoderAngle))
-		{
-			encoderAngle = 0;
-			aero.set_motorPower(motorPower);
-		}
-		else
-		{
-		encoderAngle = tmpEncoderAngle;
-		vTaskDelay(msToTick(1000));
-		}
-	}
-	return 0;
 }
 
 float feedbackLinearization(aeropendulum& aero)
